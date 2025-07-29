@@ -1,0 +1,41 @@
+# Symfony
+/var/
+/vendor/
+.env
+.env.local
+.env.*.local
+.env.dev
+
+# Composer
+composer.phar
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AWS
+.aws/
+.serverless/
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+/public/build/
+/assets/
+
+# Logs
+*.log
+
+# Cache
+var/cache/*
+!var/cache/prod/
+!var/cache/dev/
+
+# Temporary files
+*.tmp
+*.temp
