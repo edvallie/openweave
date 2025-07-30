@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home - Symfony Weaving Viewer{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Welcome to the Symfony Weaving Viewer</h2>
+        </div>
+        <div class="card-body">
+            <p style="margin-bottom: 1.5rem;">
+                This application allows you to upload and visualize WIF (Weaving Information File) patterns. 
+                WIF files contain detailed information about weaving patterns including threading, treadling, 
+                tie-up, and color information.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{ path('app_wif_viewer') }}" class="btn">
+                    📁 Open WIF Viewer
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Features</h2>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
+                    <h3 style="margin-bottom: 0.5rem;">Pattern Visualization</h3>
+                    <p>View your weaving patterns with accurate colors and threading</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔧</div>
+                    <h3 style="margin-bottom: 0.5rem;">Threading & Tie-up</h3>
+                    <p>Examine threading diagrams and treadle tie-up configurations</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                    <h3 style="margin-bottom: 0.5rem;">Detailed Information</h3>
+                    <p>Access metadata, color palettes, and pattern specifications</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

@@ -1,0 +1,82 @@
+[WIF]
+Version=1.1
+Date=December 2024
+Developers=React Weaving App
+Source Program=React Weaving Viewer
+
+[CONTENTS]
+COLOR PALETTE=true
+WEAVING=true
+WARP=true
+WEFT=true
+THREADING=true
+TREADLING=true
+TIEUP=true
+TEXT=true
+
+[TEXT]
+Title=Simple Twill Sample
+Author=Demo Pattern
+Notes=A basic 2/2 twill pattern for demonstration
+
+[COLOR PALETTE]
+Range=255
+1=0,0,0
+2=255,255,255
+3=255,0,0
+4=0,0,255
+
+[WEAVING]
+Shafts=4
+Treadles=4
+Rising Shed=true
+
+[WARP]
+Threads=16
+Color=1
+
+[WEFT]
+Threads=16
+Color=2
+
+[THREADING]
+1=1
+2=2
+3=3
+4=4
+5=1
+6=2
+7=3
+8=4
+9=1
+10=2
+11=3
+12=4
+13=1
+14=2
+15=3
+16=4
+
+[TREADLING]
+1=1
+2=2
+3=3
+4=4
+5=1
+6=2
+7=3
+8=4
+9=1
+10=2
+11=3
+12=4
+13=1
+14=2
+15=3
+16=4
+
+[TIEUP]
+1=1,2
+2=2,3
+3=3,4
+4=4,1 
