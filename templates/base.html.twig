@@ -1,148 +1,63 @@
+{# templates/base.html.twig #}
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Symfony Weaving Viewer{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🧵</text></svg>">
+        <title>{% block title %}OpenWeave{% endblock %}</title>
+        
+        {# Bootstrap CSS #}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        
         {% block stylesheets %}
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    min-height: 100vh;
-                }
-
-                .container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }
-
-                .header {
-                    text-align: center;
-                    color: white;
-                    margin-bottom: 2rem;
-                }
-
-                .header h1 {
-                    font-size: 2.5rem;
-                    font-weight: 700;
-                    margin-bottom: 0.5rem;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                }
-
-                .header p {
-                    font-size: 1.2rem;
-                    opacity: 0.9;
-                }
-
-                .card {
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-                    overflow: hidden;
-                    margin-bottom: 2rem;
-                }
-
-                .card-header {
-                    padding: 1.5rem;
-                    background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
-                    border-bottom: 1px solid #e5e7eb;
-                }
-
-                .card-header h2 {
-                    color: #1f2937;
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                }
-
-                .card-body {
-                    padding: 1.5rem;
-                }
-
-                .btn {
-                    display: inline-block;
-                    padding: 12px 24px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 8px;
-                    font-weight: 500;
-                    border: none;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    font-size: 1rem;
-                }
-
-                .btn:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-                }
-
-                .btn-secondary {
-                    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-                }
-
-                .btn-secondary:hover {
-                    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
-                }
-
-                .alert {
-                    padding: 1rem;
-                    border-radius: 8px;
-                    margin-bottom: 1rem;
-                }
-
-                .alert-error {
-                    background: #fef2f2;
-                    border: 1px solid #fecaca;
-                    color: #dc2626;
-                }
-
-                .alert-success {
-                    background: #f0fdf4;
-                    border: 1px solid #bbf7d0;
-                    color: #16a34a;
-                }
-
-                .footer {
-                    text-align: center;
-                    color: white;
-                    opacity: 0.8;
-                    margin-top: 2rem;
-                }
-
-                .footer a {
-                    color: white;
-                    text-decoration: underline;
-                }
-            </style>
-        {% endblock %}
-
-        {% block javascripts %}
+            <link rel="stylesheet" type="text/css" href="/css/base.css">
         {% endblock %}
     </head>
     <body>
-        <div class="container">
-            <header class="header">
-                <h1>🧵 Symfony Weaving Viewer</h1>
-                <p>Upload and visualize WIF (Weaving Information File) patterns</p>
+        {% block body %}
+            {# Header with Navigation #}
+            <header>
+                {% block header %}
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                        <div class="container">
+                            <a class="navbar-brand" href="{{ path('app_home') }}">🧵 OpenWeave</a>
+                            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+                            <div class="collapse navbar-collapse" id="navbarNav">
+                                <ul class="navbar-nav ms-auto">
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ path('app_home') }}">Home</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ path('app_wif_viewer') }}">WIF Viewer</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </nav>
+                {% endblock %}
             </header>
 
-            {% block body %}{% endblock %}
+            {# Main Content Area #}
+            <main>
+                {% block content %}{% endblock %}
+            </main>
 
-            <footer class="footer">
-                <p>Supports WIF specification v1.1 • <a href="http://www.tantradharma.com/maplehill/wif/wif1-1.txt" target="_blank" rel="noopener noreferrer">Learn about WIF format</a></p>
+            {# Footer #}
+            <footer class="bg-dark text-light py-4 mt-5">
+                {% block footer %}
+                    <div class="container text-center">
+                        <p class="mb-0">Supports WIF specification v1.1 • <a href="http://www.tantradharma.com/maplehill/wif/wif1-1.txt" target="_blank" rel="noopener noreferrer" class="text-light">Learn about WIF format</a></p>
+                    </div>
+                {% endblock %}
             </footer>
-        </div>
+        {% endblock %}
+
+        {# Bootstrap JavaScript #}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+        
+        {% block javascripts %}
+        {% endblock %}
     </body>
 </html>

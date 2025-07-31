@@ -1,6 +1,6 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
-{% block title %}WIF Viewer - Symfony Weaving Viewer{% endblock %}
+{% block title %}WIF Viewer - OpenWeave{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -17,6 +17,8 @@
             text-align: center;
             background: #f9fafb;
             transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
         }
 
         .file-upload:hover {
@@ -24,9 +26,44 @@
             background: #f0f4ff;
         }
 
+        .file-upload.drag-over {
+            border-color: #667eea;
+            background: #e0e7ff;
+            transform: scale(1.02);
+        }
+
         .file-upload input[type="file"] {
-            margin: 1rem 0;
-            padding: 0.5rem;
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+
+        .processing {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .processing::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #667eea;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Visualization Styles */
@@ -268,9 +305,9 @@
     </style>
 {% endblock %}
 
-{% block body %}
+{% block page_contents %}
     <div class="upload-section">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h2>📁 Upload WIF File</h2>
             </div>
@@ -285,24 +322,24 @@
                     <div class="alert alert-success">
                         ✅ Successfully loaded: {{ fileName }}
                         <form method="post" style="display: inline; margin-left: 1rem;">
-                            <button type="submit" class="btn btn-secondary" style="font-size: 0.875rem; padding: 6px 12px;">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
                                 Load New File
                             </button>
                         </form>
                     </div>
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data">
-                    <div class="file-upload">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
-                        <h3>Choose a WIF file to upload</h3>
-                        <p style="color: #6b7280; margin-bottom: 1rem;">Select a .wif file to visualize the weaving pattern</p>
-                        <input type="file" name="wif_file" accept=".wif" required>
-                        <div>
-                            <button type="submit" class="btn">
-                                🔍 Analyze WIF File
-                            </button>
+                <form method="post" enctype="multipart/form-data" id="wif-upload-form">
+                    <div class="file-upload" id="file-drop-area">
+                        <div class="upload-content">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                            <h3>Drag & Drop or Click to Upload</h3>
+                            <p style="color: #6b7280; margin-bottom: 1rem;">Drop a WIF file here or click to browse</p>
+                            <div class="btn btn-outline-primary">
+                                📁 Browse Files
+                            </div>
                         </div>
+                        <input type="file" name="wif_file" accept=".wif" required id="file-input">
                     </div>
                 </form>
             </div>
@@ -525,5 +562,93 @@
                 patternGrid.style.transformOrigin = 'top left';
             }
         }
+
+        // Drag and drop functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea = document.getElementById('file-drop-area');
+            const fileInput = document.getElementById('file-input');
+            const form = document.getElementById('wif-upload-form');
+
+            // Auto-scroll to visualization if data was just processed
+            const weavingVisualization = document.querySelector('.weaving-visualization');
+            const hasWeavingData = document.querySelector('.visualization-header');
+            
+            if (hasWeavingData && weavingVisualization) {
+                // Small delay to ensure page is fully rendered
+                setTimeout(() => {
+                    weavingVisualization.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100);
+            }
+
+            if (!dropArea || !fileInput || !form) return;
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            // Handle file input change (for click-to-browse)
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    processFile();
+                }
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                dropArea.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.toLowerCase().endsWith('.wif')) {
+                        fileInput.files = files;
+                        processFile();
+                    } else {
+                        alert('Please select a WIF file (.wif extension)');
+                    }
+                }
+            }
+
+            function processFile() {
+                // Show processing state
+                dropArea.classList.add('processing');
+                const uploadContent = dropArea.querySelector('.upload-content');
+                if (uploadContent) {
+                    uploadContent.innerHTML = '<div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div><h3>Processing WIF file...</h3><p style="color: #6b7280;">Please wait while we analyze your weaving pattern</p>';
+                }
+
+                // Submit the form
+                form.submit();
+            }
+        });
     </script>
 {% endblock %} 
