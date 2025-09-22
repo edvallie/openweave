@@ -194,7 +194,7 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1rem;
             margin-bottom: 2rem;
             position: sticky;
             top: 0;
@@ -206,53 +206,73 @@
             background: rgba(255, 255, 255, 0.98);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             border-radius: 0 0 12px 12px;
+            padding: 0.75rem 1rem;
         }
 
         .filters-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .filters-header h3 {
             margin: 0;
             color: #1f2937;
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 600;
         }
 
         .filters-form {
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: end;
             flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .filter-group-section {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1200px) {
+            .filters-form {
+                justify-content: center;
+                gap: 0.75rem;
+            }
+            
+            .filter-group-section {
+                gap: 0.75rem;
+            }
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.25rem;
         }
 
         .filter-group label {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 500;
             color: #374151;
         }
 
         .filter-group input {
-            padding: 0.5rem 0.75rem;
+            padding: 0.375rem 0.5rem;
             border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            width: 100px;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            width: 80px;
             transition: border-color 0.2s ease;
         }
 
         .filter-group input[type="color"] {
-            width: 80px;
-            height: 40px;
+            width: 60px;
+            height: 32px;
             padding: 2px;
             cursor: pointer;
         }
@@ -270,13 +290,6 @@
             align-items: center;
         }
 
-        .color-preview {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.25rem;
-        }
-
         .color-swatch-small {
             width: 20px;
             height: 20px;
@@ -287,13 +300,20 @@
 
         .alternating-warp-section {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             align-items: end;
-            flex-wrap: wrap;
-            padding: 1rem;
+            flex-wrap: nowrap;
+            padding: 0.5rem 0.75rem;
             background: rgba(102, 126, 234, 0.05);
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        @media (max-width: 1200px) {
+            .alternating-warp-section {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
         }
 
         .toggle-group {
@@ -384,15 +404,24 @@
         .filter-actions {
             display: flex;
             gap: 0.75rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .filter-actions {
+                justify-content: center;
+                width: 100%;
+            }
         }
 
         .btn-filter {
             background: #667eea;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -407,9 +436,9 @@
             background: #6b7280;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -490,95 +519,101 @@
         </div>
         
         <form method="GET" class="filters-form">
-            <div class="filter-group">
-                <label for="max_shafts">Max Shafts</label>
-                <input type="number" 
-                       id="max_shafts" 
-                       name="max_shafts" 
-                       min="1" 
-                       max="32" 
-                       value="{{ filters.maxShafts }}"
-                       placeholder="Any">
+            <div class="filter-group-section">
+                <div class="filter-group">
+                    <label for="max_shafts">Max Shafts</label>
+                    <input type="number" 
+                           id="max_shafts" 
+                           name="max_shafts" 
+                           min="1" 
+                           max="32" 
+                           value="{{ filters.maxShafts }}"
+                           placeholder="Any">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="max_treadles">Max Treadles</label>
+                    <input type="number" 
+                           id="max_treadles" 
+                           name="max_treadles" 
+                           min="1" 
+                           max="32" 
+                           value="{{ filters.maxTreadles }}"
+                           placeholder="Any">
+                </div>
             </div>
             
-            <div class="filter-group">
-                <label for="max_treadles">Max Treadles</label>
-                <input type="number" 
-                       id="max_treadles" 
-                       name="max_treadles" 
-                       min="1" 
-                       max="32" 
-                       value="{{ filters.maxTreadles }}"
-                       placeholder="Any">
-            </div>
-            
-            <div class="filter-group color-group">
-                <label for="primary_color">Primary Color</label>
-                <input type="color" 
-                       id="primary_color" 
-                       name="primary_color" 
-                       value="{{ filters.primaryColor ?: '#000000' }}"
-                       title="Override primary color">
-                <small style="font-size: 0.75rem; color: #6b7280;">Color 1</small>
-            </div>
-            
-            <div class="filter-group color-group">
-                <label for="secondary_color">Secondary Color</label>
-                <input type="color" 
-                       id="secondary_color" 
-                       name="secondary_color" 
-                       value="{{ filters.secondaryColor ?: '#ffffff' }}"
-                       title="Override secondary color">
-                <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
-            </div>
-            
-            <div class="alternating-warp-section {{ not filters.alternatingWarpEnabled ? 'disabled' : '' }}" id="alternating_warp_section">
-                <div class="filter-group toggle-group">
-                    <label for="alternating_warp_enabled">Alternating Warp</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" 
-                               id="alternating_warp_enabled" 
-                               name="alternating_warp_enabled"
-                               value="1"
-                               {{ filters.alternatingWarpEnabled ? 'checked' : '' }}
-                               title="Enable alternating warp colors">
-                        <span class="slider"></span>
-                    </label>
-                    <small style="font-size: 0.75rem; color: #6b7280;">Enable</small>
+            <div class="filter-group-section">
+                <div class="filter-group color-group">
+                    <label for="primary_color">Primary Color</label>
+                    <input type="color" 
+                           id="primary_color" 
+                           name="primary_color" 
+                           value="{{ filters.primaryColor ?: '#000000' }}"
+                           title="Override primary color">
+                    <small style="font-size: 0.75rem; color: #6b7280;">Color 1</small>
                 </div>
                 
                 <div class="filter-group color-group">
-                    <label for="alternating_warp_color">Stripe Color</label>
+                    <label for="secondary_color">Secondary Color</label>
                     <input type="color" 
-                           id="alternating_warp_color" 
-                           name="alternating_warp_color" 
-                           value="{{ filters.alternatingWarpColor ?: '#ff0000' }}"
-                           title="Alternating warp color">
-                    <small style="font-size: 0.75rem; color: #6b7280;">Color</small>
+                           id="secondary_color" 
+                           name="secondary_color" 
+                           value="{{ filters.secondaryColor ?: '#ffffff' }}"
+                           title="Override secondary color">
+                    <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="alternating_warp_span">Span</label>
-                    <input type="number" 
-                           id="alternating_warp_span" 
-                           name="alternating_warp_span" 
-                           min="1" 
-                           max="50" 
-                           value="{{ filters.alternatingWarpSpan ?: '4' }}"
-                           placeholder="4"
-                           title="Number of threads per stripe">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="alternating_warp_offset">Offset</label>
-                    <input type="number" 
-                           id="alternating_warp_offset" 
-                           name="alternating_warp_offset" 
-                           min="0" 
-                           max="50" 
-                           value="{{ filters.alternatingWarpOffset ?: '0' }}"
-                           placeholder="0"
-                           title="Thread offset for stripe pattern">
+            </div>
+            
+            <div class="filter-group-section">
+                <div class="alternating-warp-section {{ not filters.alternatingWarpEnabled ? 'disabled' : '' }}" id="alternating_warp_section">
+                    <div class="filter-group toggle-group">
+                        <label for="alternating_warp_enabled">Alt. Warp</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" 
+                                   id="alternating_warp_enabled" 
+                                   name="alternating_warp_enabled"
+                                   value="1"
+                                   {{ filters.alternatingWarpEnabled ? 'checked' : '' }}
+                                   title="Enable alternating warp colors">
+                            <span class="slider"></span>
+                        </label>
+                        <small style="font-size: 0.75rem; color: #6b7280;">Enable</small>
+                    </div>
+                    
+                    <div class="filter-group color-group">
+                        <label for="alternating_warp_color">Stripe Color</label>
+                        <input type="color" 
+                               id="alternating_warp_color" 
+                               name="alternating_warp_color" 
+                               value="{{ filters.alternatingWarpColor ?: '#ff0000' }}"
+                               title="Alternating warp color">
+                        <small style="font-size: 0.75rem; color: #6b7280;">Color</small>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="alternating_warp_span">Span</label>
+                        <input type="number" 
+                               id="alternating_warp_span" 
+                               name="alternating_warp_span" 
+                               min="1" 
+                               max="50" 
+                               value="{{ filters.alternatingWarpSpan ?: '4' }}"
+                               placeholder="4"
+                               title="Number of threads per stripe">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="alternating_warp_offset">Offset</label>
+                        <input type="number" 
+                               id="alternating_warp_offset" 
+                               name="alternating_warp_offset" 
+                               min="0" 
+                               max="50" 
+                               value="{{ filters.alternatingWarpOffset ?: '0' }}"
+                               placeholder="0"
+                               title="Thread offset for stripe pattern">
+                    </div>
                 </div>
             </div>
             
