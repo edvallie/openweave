@@ -1,0 +1,490 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ weavingData.metadata.title }} - Pattern - OpenWeave{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Back Button Styles */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-button:hover {
+            color: #4f46e5;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Visualization Styles - Copied from WIF viewer */
+        .weaving-visualization {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .visualization-placeholder {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .placeholder-content h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.25rem;
+            color: #6b7280;
+        }
+
+        .visualization-header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+        }
+
+        .visualization-header h2 {
+            margin: 0 0 4px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .visualization-header .author {
+            margin: 0;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .visualization-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .tab.active {
+            background: #ffffff;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .visualization-content {
+            padding: 24px;
+            max-height: 600px;
+            overflow: auto;
+        }
+
+        /* Pattern Visualization */
+        .pattern-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .pattern-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pattern-controls label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .pattern-grid {
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            display: inline-block;
+            background: white;
+        }
+
+        .pattern-row {
+            display: flex;
+        }
+
+        .pattern-cell {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            min-width: 4px;
+            min-height: 4px;
+        }
+
+        /* Threading Visualization */
+        .threading-container, .tieup-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .threading-grid, .tieup-grid {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .shaft-row, .tieup-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .shaft-label, .treadle-label {
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-right: 1px solid #e5e7eb;
+            font-size: 0.75rem;
+            font-weight: 500;
+            width: 80px;
+            text-align: center;
+        }
+
+        .threading-cell, .tieup-cell {
+            width: 20px;
+            height: 20px;
+            border: 0.5px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .threading-cell.active, .tieup-cell.active {
+            background: #667eea;
+        }
+
+        .thread-numbers, .treadle-labels {
+            display: flex;
+            margin-top: 4px;
+        }
+
+        .thread-number {
+            width: 20px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .treadle-labels {
+            margin-left: 80px;
+        }
+
+        .treadle-labels .spacer {
+            width: 80px;
+        }
+
+        /* Metadata Styles */
+        .metadata-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .metadata-section h4 {
+            margin-bottom: 12px;
+            color: #1f2937;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .metadata-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .metadata-item strong {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+
+        .no-data, .no-pattern {
+            text-align: center;
+            color: #6b7280;
+            padding: 2rem;
+        }
+    </style>
+{% endblock %}
+
+{% block page_contents %}
+    <a href="{{ path('app_home') }}" class="back-button">
+        ← Back to Pattern Library
+    </a>
+
+    <div class="weaving-visualization">
+        {% if weavingData %}
+            <div class="visualization-header">
+                <h2>{{ weavingData.metadata.title }}</h2>
+                {% if weavingData.metadata.author %}
+                    <p class="author">by {{ weavingData.metadata.author }}</p>
+                {% endif %}
+            </div>
+
+            <div class="visualization-tabs">
+                <button class="tab active" onclick="showTab('pattern')">Pattern</button>
+                <button class="tab" onclick="showTab('threading')">Threading</button>
+                <button class="tab" onclick="showTab('tieup')">Tieup</button>
+                <button class="tab" onclick="showTab('info')">Info</button>
+            </div>
+
+            <div class="visualization-content">
+                <!-- Pattern Tab -->
+                <div id="pattern-tab" class="tab-content">
+                    {% if weavingData.pattern %}
+                        <div class="pattern-container">
+                            <div class="pattern-controls">
+                                <label>
+                                    Zoom:
+                                    <input type="range" min="0.5" max="3" step="0.1" value="1" onchange="updateZoom(this.value)">
+                                    <span id="zoom-value">1.0x</span>
+                                </label>
+                            </div>
+                            
+                            <div class="pattern-grid" id="pattern-grid">
+                                {% for pickIndex, row in weavingData.pattern %}
+                                    <div class="pattern-row">
+                                        {% for threadIndex, cell in row %}
+                                            {% set color = weavingData.colors.colors[cell.displayColor] ?? null %}
+                                            {% set backgroundColor = color ? 'rgb(' ~ color.r ~ ', ' ~ color.g ~ ', ' ~ color.b ~ ')' : '#000000' %}
+                                            <div class="pattern-cell" 
+                                                 style="background-color: {{ backgroundColor }}; width: 4px; height: 4px;"
+                                                 title="Pick {{ pickIndex + 1 }}, Thread {{ threadIndex + 1 }}{{ cell.isUp ? ' (Warp up)' : ' (Weft up)' }}">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="no-pattern">No pattern data available</div>
+                    {% endif %}
+                </div>
+
+                <!-- Threading Tab -->
+                <div id="threading-tab" class="tab-content" style="display: none;">
+                    {% if weavingData.threading %}
+                        <div class="threading-container">
+                            <h4>Threading (Thread → Shaft)</h4>
+                            {% set maxThread = weavingData.threading|keys|max %}
+                            {% set maxShaft = weavingData.threading|max %}
+                            
+                            <div class="threading-grid">
+                                {% for shaftIndex in 1..maxShaft %}
+                                    <div class="shaft-row">
+                                        <div class="shaft-label">Shaft {{ shaftIndex }}</div>
+                                        {% for threadIndex in 1..maxThread %}
+                                            {% set assignedShaft = weavingData.threading[threadIndex] %}
+                                            {% set isActive = assignedShaft == shaftIndex %}
+                                            <div class="threading-cell {{ isActive ? 'active' : '' }}"
+                                                 title="Thread {{ threadIndex }} → Shaft {{ assignedShaft ?: 'none' }}">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                <div class="thread-numbers">
+                                    <div style="width: 80px;"></div>
+                                    {% for threadIndex in 1..maxThread %}
+                                        <div class="thread-number">{{ threadIndex }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="no-data">No threading data available</div>
+                    {% endif %}
+                </div>
+
+                <!-- Tieup Tab -->
+                <div id="tieup-tab" class="tab-content" style="display: none;">
+                    {% if weavingData.tieup %}
+                        <div class="tieup-container">
+                            <h4>Tieup (Treadle → Shafts)</h4>
+                            {% set maxTreadle = weavingData.tieup|keys|max %}
+                            {% set allShafts = [] %}
+                            {% for shafts in weavingData.tieup %}
+                                {% set allShafts = allShafts|merge(shafts) %}
+                            {% endfor %}
+                            {% set maxShaft = allShafts|max %}
+                            
+                            <div class="tieup-grid">
+                                {% for shaftIndex in 1..maxShaft %}
+                                    <div class="tieup-row">
+                                        <div class="shaft-label">Shaft {{ shaftIndex }}</div>
+                                        {% for treadleIndex in 1..maxTreadle %}
+                                            {% set connectedShafts = weavingData.tieup[treadleIndex] ?: [] %}
+                                            {% set isConnected = shaftIndex in connectedShafts %}
+                                            <div class="tieup-cell {{ isConnected ? 'active' : '' }}"
+                                                 title="Treadle {{ treadleIndex }} {{ isConnected ? 'lifts' : 'does not lift' }} Shaft {{ shaftIndex }}">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                <div class="treadle-labels">
+                                    <div class="spacer"></div>
+                                    {% for treadleIndex in 1..maxTreadle %}
+                                        <div class="treadle-label">T{{ treadleIndex }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="no-data">No tieup data available</div>
+                    {% endif %}
+                </div>
+
+                <!-- Info Tab -->
+                <div id="info-tab" class="tab-content" style="display: none;">
+                    <div class="metadata-container">
+                        <div class="metadata-section">
+                            <h4>Weaving Information</h4>
+                            <div class="metadata-grid">
+                                <div class="metadata-item">
+                                    <strong>Title:</strong> {{ weavingData.metadata.title }}
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Author:</strong> {{ weavingData.metadata.author ?: 'Unknown' }}
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Shafts:</strong> {{ weavingData.weaving.shafts }}
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Treadles:</strong> {{ weavingData.weaving.treadles }}
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Rising Shed:</strong> {{ weavingData.weaving.risingShed ? 'Yes' : 'No' }}
+                                </div>
+                                {% if weavingData.metadata.source %}
+                                    <div class="metadata-item">
+                                        <strong>Source Program:</strong> {{ weavingData.metadata.source }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="metadata-section">
+                            <h4>Color Palette</h4>
+                            <div style="margin-bottom: 1rem; font-size: 0.875rem; color: #6b7280;">
+                                {% if weavingData.colors.palette %}
+                                    Format: {{ weavingData.colors.palette.form }} • Range: {{ weavingData.colors.palette.range.min }}-{{ weavingData.colors.palette.range.max }} • Entries: {{ weavingData.colors.palette.entries }}
+                                {% endif %}
+                            </div>
+                            <div class="color-palette">
+                                {% for index, color in weavingData.colors.colors %}
+                                    <div class="color-item">
+                                        <div class="color-swatch" 
+                                             style="background-color: rgb({{ color.r }}, {{ color.g }}, {{ color.b }})"
+                                             title="Color {{ index }}: RGB({{ color.r }}, {{ color.g }}, {{ color.b }})">
+                                        </div>
+                                        <span>Color {{ index }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {% if weavingData.metadata.notes %}
+                            <div class="metadata-section">
+                                <h4>Notes</h4>
+                                <p>{{ weavingData.metadata.notes }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="visualization-placeholder">
+                <div class="placeholder-content">
+                    <div style="font-size: 4rem; margin-bottom: 16px; opacity: 0.5;">🧵</div>
+                    <h3>No Weaving Pattern</h3>
+                    <p>Pattern data could not be loaded</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.style.display = 'none');
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function updateZoom(value) {
+            document.getElementById('zoom-value').textContent = parseFloat(value).toFixed(1) + 'x';
+            const patternGrid = document.getElementById('pattern-grid');
+            if (patternGrid) {
+                patternGrid.style.transform = `scale(${value})`;
+                patternGrid.style.transformOrigin = 'top left';
+            }
+        }
+    </script>
+{% endblock %}

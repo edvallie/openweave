@@ -42,3 +42,6 @@ var/cache/*
 # Temporary files
 *.tmp
 *.temp
+
+# Data directory (contains WIF files and catalog)
+/data/

@@ -1,0 +1,808 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Browse Patterns - OpenWeave{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Pattern Grid Styles */
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .pattern-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .pattern-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .pattern-header {
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .pattern-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .pattern-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .pattern-preview {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9fafb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pattern-preview canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+
+        .pattern-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+        }
+
+        .pattern-loading .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .pagination a, .pagination span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .pagination a {
+            background: #ffffff;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+        .pagination a:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination .current {
+            background: #667eea;
+            color: #ffffff;
+            border: 1px solid #667eea;
+        }
+
+        .pagination .disabled {
+            background: #f9fafb;
+            color: #9ca3af;
+            border: 1px solid #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* Header Stats */
+        .browse-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .browse-title h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .browse-stats {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* Filters */
+        .filters-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .filters-header h3 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .filters-form {
+            display: flex;
+            gap: 1.5rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .filter-group input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            width: 100px;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input[type="color"] {
+            width: 80px;
+            height: 40px;
+            padding: 2px;
+            cursor: pointer;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .color-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .color-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .color-swatch-small {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            display: inline-block;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-filter {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-filter:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn-clear {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-clear:hover {
+            background: #4b5563;
+            color: white;
+            text-decoration: none;
+        }
+
+        .active-filters {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-tag {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Loading pattern cards */
+        .pattern-card.loading .pattern-preview {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+{% endblock %}
+
+{% block page_contents %}
+    <div class="browse-header">
+        <div class="browse-title">
+            <h2>🎨 Pattern Library</h2>
+        </div>
+        <div class="browse-stats">
+            <div class="stat-item">
+                <span>📋</span>
+                {% if totalPatterns != totalPatternsUnfiltered %}
+                    <span>Showing: <span class="stat-value">{{ totalPatterns | number_format }}</span> of {{ totalPatternsUnfiltered | number_format }} patterns</span>
+                {% else %}
+                    <span>Total: <span class="stat-value">{{ totalPatterns | number_format }}</span> patterns</span>
+                {% endif %}
+            </div>
+            <div class="stat-item">
+                <span>📄</span>
+                <span>Page: <span class="stat-value">{{ currentPage }}</span> of {{ totalPages }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-section">
+        <div class="filters-header">
+            <h3>🔍 Filter Patterns</h3>
+        </div>
+        
+        <form method="GET" class="filters-form">
+            <div class="filter-group">
+                <label for="max_shafts">Max Shafts</label>
+                <input type="number" 
+                       id="max_shafts" 
+                       name="max_shafts" 
+                       min="1" 
+                       max="32" 
+                       value="{{ filters.maxShafts }}"
+                       placeholder="Any">
+            </div>
+            
+            <div class="filter-group">
+                <label for="max_treadles">Max Treadles</label>
+                <input type="number" 
+                       id="max_treadles" 
+                       name="max_treadles" 
+                       min="1" 
+                       max="32" 
+                       value="{{ filters.maxTreadles }}"
+                       placeholder="Any">
+            </div>
+            
+            <div class="filter-group color-group">
+                <label for="primary_color">Primary Color</label>
+                <input type="color" 
+                       id="primary_color" 
+                       name="primary_color" 
+                       value="{{ filters.primaryColor ?: '#000000' }}"
+                       title="Override primary color">
+                <small style="font-size: 0.75rem; color: #6b7280;">Color 1</small>
+            </div>
+            
+            <div class="filter-group color-group">
+                <label for="secondary_color">Secondary Color</label>
+                <input type="color" 
+                       id="secondary_color" 
+                       name="secondary_color" 
+                       value="{{ filters.secondaryColor ?: '#ffffff' }}"
+                       title="Override secondary color">
+                <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">Apply Filters</button>
+                {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor %}
+                    <a href="{{ path('app_home') }}" class="btn-clear">Clear All</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor %}
+            <div class="active-filters">
+                <div class="filter-tags">
+                    <span style="color: #6b7280; font-size: 0.875rem; font-weight: 500;">Active filters:</span>
+                    {% if filters.maxShafts %}
+                        <div class="filter-tag">
+                            Max {{ filters.maxShafts }} shafts
+                        </div>
+                    {% endif %}
+                    {% if filters.maxTreadles %}
+                        <div class="filter-tag">
+                            Max {{ filters.maxTreadles }} treadles
+                        </div>
+                    {% endif %}
+                    {% if filters.primaryColor %}
+                        <div class="filter-tag">
+                            <span class="color-swatch-small" style="background-color: {{ filters.primaryColor }};"></span>
+                            Primary color
+                        </div>
+                    {% endif %}
+                    {% if filters.secondaryColor %}
+                        <div class="filter-tag">
+                            <span class="color-swatch-small" style="background-color: {{ filters.secondaryColor }};"></span>
+                            Secondary color
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if patterns is empty %}
+        <div class="card">
+            <div class="card-body text-center">
+                <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5;">🔍</div>
+                {% if filters.maxShafts or filters.maxTreadles %}
+                    <h3>No Patterns Match Your Filters</h3>
+                    <p class="text-muted">Try adjusting your filter criteria or <a href="{{ path('app_home') }}">view all patterns</a>.</p>
+                {% else %}
+                    <h3>No Patterns Found</h3>
+                    <p class="text-muted">The pattern library appears to be empty.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="patterns-grid" id="patterns-grid">
+            {% for pattern in patterns %}
+                <div class="pattern-card" data-pattern-id="{{ loop.index0 + ((currentPage - 1) * perPage) }}" data-filepath="{{ pattern.filepath }}">
+                    <div class="pattern-header">
+                        <h3>{{ pattern.title }}</h3>
+                        <div class="pattern-meta">
+                            <span>{{ pattern.source }}</span>
+                            <span>{{ pattern.shafts }}×{{ pattern.treadles }}</span>
+                        </div>
+                    </div>
+                    <div class="pattern-preview">
+                        <div class="pattern-loading">
+                            <div class="spinner"></div>
+                            <span>Loading pattern...</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Showing {{ (currentPage - 1) * perPage + 1 }} to {{ min(currentPage * perPage, totalPatterns) }} of {{ totalPatterns | number_format }} patterns
+            </div>
+            
+            {% if totalPages > 1 %}
+                {% set filterParams = {} %}
+                {% if filters.maxShafts %}
+                    {% set filterParams = filterParams|merge({'max_shafts': filters.maxShafts}) %}
+                {% endif %}
+                {% if filters.maxTreadles %}
+                    {% set filterParams = filterParams|merge({'max_treadles': filters.maxTreadles}) %}
+                {% endif %}
+                {% if filters.primaryColor %}
+                    {% set filterParams = filterParams|merge({'primary_color': filters.primaryColor}) %}
+                {% endif %}
+                {% if filters.secondaryColor %}
+                    {% set filterParams = filterParams|merge({'secondary_color': filters.secondaryColor}) %}
+                {% endif %}
+
+                <nav class="pagination">
+                    {% if currentPage > 1 %}
+                        <a href="{{ path('app_home', filterParams|merge({'page': 1})) }}" title="First page">⏪</a>
+                        <a href="{{ path('app_home', filterParams|merge({'page': currentPage - 1})) }}" title="Previous page">⬅️</a>
+                    {% else %}
+                        <span class="disabled" title="First page">⏪</span>
+                        <span class="disabled" title="Previous page">⬅️</span>
+                    {% endif %}
+
+                    {% set start_page = max(1, currentPage - 2) %}
+                    {% set end_page = min(totalPages, currentPage + 2) %}
+                    
+                    {% if start_page > 1 %}
+                        <a href="{{ path('app_home', filterParams|merge({'page': 1})) }}">1</a>
+                        {% if start_page > 2 %}
+                            <span>…</span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% for page in start_page..end_page %}
+                        {% if page == currentPage %}
+                            <span class="current">{{ page }}</span>
+                        {% else %}
+                            <a href="{{ path('app_home', filterParams|merge({'page': page})) }}">{{ page }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if end_page < totalPages %}
+                        {% if end_page < totalPages - 1 %}
+                            <span>…</span>
+                        {% endif %}
+                        <a href="{{ path('app_home', filterParams|merge({'page': totalPages})) }}">{{ totalPages }}</a>
+                    {% endif %}
+
+                    {% if currentPage < totalPages %}
+                        <a href="{{ path('app_home', filterParams|merge({'page': currentPage + 1})) }}" title="Next page">➡️</a>
+                        <a href="{{ path('app_home', filterParams|merge({'page': totalPages})) }}" title="Last page">⏩</a>
+                    {% else %}
+                        <span class="disabled" title="Next page">➡️</span>
+                        <span class="disabled" title="Last page">⏩</span>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const patternCards = document.querySelectorAll('.pattern-card');
+            
+            patternCards.forEach((card, index) => {
+                const filepath = card.dataset.filepath;
+                if (filepath) {
+                    // Extract filename from filepath
+                    const filename = filepath.split('/').pop().replace('.wif', '');
+                    
+                    // Add click handler for navigation
+                    card.addEventListener('click', function() {
+                        window.location.href = `/pattern/${filename}`;
+                    });
+                    
+                    // Store filename for reloading
+                    card.dataset.filename = filename;
+                    
+                    // Load pattern preview after a delay to stagger requests
+                    setTimeout(() => {
+                        loadPatternPreview(card, filename);
+                    }, index * 100);
+                }
+            });
+            
+            // Add change handlers for all filter inputs
+            const primaryColorInput = document.getElementById('primary_color');
+            const secondaryColorInput = document.getElementById('secondary_color');
+            const maxShaftsInput = document.getElementById('max_shafts');
+            const maxTreadlesInput = document.getElementById('max_treadles');
+            
+            if (primaryColorInput) {
+                primaryColorInput.addEventListener('change', reloadAllPreviews);
+                primaryColorInput.addEventListener('change', updatePaginationLinks);
+            }
+            if (secondaryColorInput) {
+                secondaryColorInput.addEventListener('change', reloadAllPreviews);
+                secondaryColorInput.addEventListener('change', updatePaginationLinks);
+            }
+            if (maxShaftsInput) {
+                maxShaftsInput.addEventListener('input', updatePaginationLinks);
+            }
+            if (maxTreadlesInput) {
+                maxTreadlesInput.addEventListener('input', updatePaginationLinks);
+            }
+            
+            // Update pagination links on page load to include current form state
+            updatePaginationLinks();
+        });
+
+        function updatePaginationLinks() {
+            const paginationLinks = document.querySelectorAll('.pagination a');
+            const primaryColor = document.getElementById('primary_color')?.value;
+            const secondaryColor = document.getElementById('secondary_color')?.value;
+            const maxShafts = document.getElementById('max_shafts')?.value;
+            const maxTreadles = document.getElementById('max_treadles')?.value;
+            
+            paginationLinks.forEach(link => {
+                const url = new URL(link.href);
+                
+                // Update or add current form values
+                if (maxShafts && maxShafts !== '') {
+                    url.searchParams.set('max_shafts', maxShafts);
+                } else {
+                    url.searchParams.delete('max_shafts');
+                }
+                
+                if (maxTreadles && maxTreadles !== '') {
+                    url.searchParams.set('max_treadles', maxTreadles);
+                } else {
+                    url.searchParams.delete('max_treadles');
+                }
+                
+                if (primaryColor && primaryColor !== '#000000') {
+                    url.searchParams.set('primary_color', primaryColor);
+                } else {
+                    url.searchParams.delete('primary_color');
+                }
+                
+                if (secondaryColor && secondaryColor !== '#ffffff') {
+                    url.searchParams.set('secondary_color', secondaryColor);
+                } else {
+                    url.searchParams.delete('secondary_color');
+                }
+                
+                link.href = url.toString();
+            });
+        }
+
+        function reloadAllPreviews() {
+            const patternCards = document.querySelectorAll('.pattern-card');
+            patternCards.forEach((card, index) => {
+                const filename = card.dataset.filename;
+                if (filename) {
+                    // Show loading state
+                    const previewDiv = card.querySelector('.pattern-preview');
+                    previewDiv.innerHTML = '<div class="pattern-loading"><div class="spinner"></div><span>Updating...</span></div>';
+                    
+                    // Reload with delay to avoid overwhelming the server
+                    setTimeout(() => {
+                        loadPatternPreview(card, filename);
+                    }, index * 50);
+                }
+            });
+        }
+
+        async function loadPatternPreview(card, filename) {
+            try {
+                // Get color overrides from form
+                const primaryColorInput = document.getElementById('primary_color');
+                const secondaryColorInput = document.getElementById('secondary_color');
+                const primaryColor = primaryColorInput?.value;
+                const secondaryColor = secondaryColorInput?.value;
+                
+                const requestBody = {};
+                if (primaryColor && primaryColor !== '#000000') {
+                    requestBody.primaryColor = primaryColor;
+                }
+                if (secondaryColor && secondaryColor !== '#ffffff') {
+                    requestBody.secondaryColor = secondaryColor;
+                }
+                
+                const response = await fetch(`/pattern/${filename}/preview`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (response.ok) {
+                    const weavingData = await response.json();
+                    renderPatternPreview(card, weavingData);
+                } else {
+                    showPreviewError(card, 'Failed to load pattern');
+                }
+            } catch (error) {
+                showPreviewError(card, 'Error loading pattern');
+            }
+        }
+
+        function renderPatternPreview(card, weavingData) {
+            const previewDiv = card.querySelector('.pattern-preview');
+            
+            if (!weavingData.pattern || !Array.isArray(weavingData.pattern)) {
+                showPreviewError(card, 'No pattern data');
+                return;
+            }
+
+            // Create canvas for pattern
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const pattern = weavingData.pattern;
+            const colors = weavingData.colors?.colors || {1: {r: 0, g: 0, b: 0}, 2: {r: 255, g: 255, b: 255}};
+            
+            // Get actual pattern dimensions
+            const originalPatternHeight = pattern.length;
+            const originalPatternWidth = pattern.length > 0 ? pattern[0].length : 0;
+            
+            if (originalPatternWidth === 0 || originalPatternHeight === 0) {
+                showPreviewError(card, 'Empty pattern');
+                return;
+            }
+            
+            // Available space in the preview area (accounting for padding)
+            const maxDisplayWidth = 260;  // Card width minus padding
+            const maxDisplayHeight = 180; // Preview area height minus padding
+            
+            // Calculate scale to fit the pattern optimally in the available space
+            const scaleX = maxDisplayWidth / originalPatternWidth;
+            const scaleY = maxDisplayHeight / originalPatternHeight;
+            const scale = Math.min(scaleX, scaleY, 8); // Cap at 8x to avoid pixelation
+            
+            // Ensure minimum scale for very large patterns
+            const minScale = Math.max(0.5, Math.min(2, scale));
+            const finalScale = Math.max(minScale, scale);
+            
+            // Calculate final dimensions
+            const displayWidth = Math.round(originalPatternWidth * finalScale);
+            const displayHeight = Math.round(originalPatternHeight * finalScale);
+            
+            // Set canvas size
+            const pixelRatio = window.devicePixelRatio || 1;
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+            canvas.width = displayWidth * pixelRatio;
+            canvas.height = displayHeight * pixelRatio;
+            ctx.scale(pixelRatio, pixelRatio);
+
+            // Calculate cell size for drawing
+            const cellWidth = finalScale;
+            const cellHeight = finalScale;
+            
+            // Disable image smoothing for crisp pixel art
+            ctx.imageSmoothingEnabled = false;
+            
+            // Sample pattern if it's very large to avoid performance issues
+            const maxPatternSize = 200;
+            const sampleX = originalPatternWidth > maxPatternSize ? Math.floor(originalPatternWidth / maxPatternSize) : 1;
+            const sampleY = originalPatternHeight > maxPatternSize ? Math.floor(originalPatternHeight / maxPatternSize) : 1;
+            
+            // Draw pattern
+            for (let row = 0; row < originalPatternHeight; row += sampleY) {
+                if (!pattern[row]) continue;
+                
+                for (let col = 0; col < originalPatternWidth; col += sampleX) {
+                    if (col >= pattern[row].length) continue;
+                    
+                    const cell = pattern[row][col];
+                    const color = colors[cell.displayColor] || colors[1] || {r: 0, g: 0, b: 0};
+                    
+                    ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                    ctx.fillRect(
+                        (col / sampleX) * cellWidth, 
+                        (row / sampleY) * cellHeight, 
+                        cellWidth, 
+                        cellHeight
+                    );
+                }
+            }
+            
+            previewDiv.innerHTML = '';
+            previewDiv.appendChild(canvas);
+        }
+
+        function showPreviewError(card, message) {
+            const previewDiv = card.querySelector('.pattern-preview');
+            previewDiv.innerHTML = `
+                <div style="text-align: center; color: #9ca3af; font-size: 0.875rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;">⚠️</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+    </script>
+{% endblock %}
