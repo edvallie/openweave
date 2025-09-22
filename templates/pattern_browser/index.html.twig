@@ -196,6 +196,16 @@
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: all 0.2s ease;
+        }
+
+        .filters-section.stuck {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 0 0 12px 12px;
         }
 
         .filters-header {
@@ -273,6 +283,102 @@
             border-radius: 4px;
             border: 1px solid #d1d5db;
             display: inline-block;
+        }
+
+        .alternating-warp-section {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .alternating-warp-section.disabled {
+            opacity: 0.5;
+        }
+
+        .alternating-warp-section.disabled .filter-group:not(.toggle-group) {
+            pointer-events: none;
+        }
+
+        .alternating-warp-section.disabled .toggle-group {
+            opacity: 1;
+            position: relative;
+        }
+
+        .alternating-warp-section.disabled .toggle-group::after {
+            content: "👆 Turn on to enable alternating warp stripes";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .alternating-warp-section.disabled:hover .toggle-group::after {
+            opacity: 1;
         }
 
         .filter-actions {
@@ -426,15 +532,65 @@
                 <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
             </div>
             
+            <div class="alternating-warp-section {{ not filters.alternatingWarpEnabled ? 'disabled' : '' }}" id="alternating_warp_section">
+                <div class="filter-group toggle-group">
+                    <label for="alternating_warp_enabled">Alternating Warp</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" 
+                               id="alternating_warp_enabled" 
+                               name="alternating_warp_enabled"
+                               value="1"
+                               {{ filters.alternatingWarpEnabled ? 'checked' : '' }}
+                               title="Enable alternating warp colors">
+                        <span class="slider"></span>
+                    </label>
+                    <small style="font-size: 0.75rem; color: #6b7280;">Enable</small>
+                </div>
+                
+                <div class="filter-group color-group">
+                    <label for="alternating_warp_color">Stripe Color</label>
+                    <input type="color" 
+                           id="alternating_warp_color" 
+                           name="alternating_warp_color" 
+                           value="{{ filters.alternatingWarpColor ?: '#ff0000' }}"
+                           title="Alternating warp color">
+                    <small style="font-size: 0.75rem; color: #6b7280;">Color</small>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="alternating_warp_span">Span</label>
+                    <input type="number" 
+                           id="alternating_warp_span" 
+                           name="alternating_warp_span" 
+                           min="1" 
+                           max="50" 
+                           value="{{ filters.alternatingWarpSpan ?: '4' }}"
+                           placeholder="4"
+                           title="Number of threads per stripe">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="alternating_warp_offset">Offset</label>
+                    <input type="number" 
+                           id="alternating_warp_offset" 
+                           name="alternating_warp_offset" 
+                           min="0" 
+                           max="50" 
+                           value="{{ filters.alternatingWarpOffset ?: '0' }}"
+                           placeholder="0"
+                           title="Thread offset for stripe pattern">
+                </div>
+            </div>
+            
             <div class="filter-actions">
                 <button type="submit" class="btn-filter">Apply Filters</button>
-                {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor %}
+                {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
                     <a href="{{ path('app_home') }}" class="btn-clear">Clear All</a>
                 {% endif %}
             </div>
         </form>
 
-        {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor %}
+        {% if filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
             <div class="active-filters">
                 <div class="filter-tags">
                     <span style="color: #6b7280; font-size: 0.875rem; font-weight: 500;">Active filters:</span>
@@ -458,6 +614,12 @@
                         <div class="filter-tag">
                             <span class="color-swatch-small" style="background-color: {{ filters.secondaryColor }};"></span>
                             Secondary color
+                        </div>
+                    {% endif %}
+                    {% if filters.alternatingWarpEnabled %}
+                        <div class="filter-tag">
+                            <span class="color-swatch-small" style="background-color: {{ filters.alternatingWarpColor ?: '#ff0000' }};"></span>
+                            Alternating warp ({{ filters.alternatingWarpSpan ?: '4' }}{{ filters.alternatingWarpOffset and filters.alternatingWarpOffset != '0' ? '+' ~ filters.alternatingWarpOffset : '' }} threads)
                         </div>
                     {% endif %}
                 </div>
@@ -518,6 +680,18 @@
                 {% endif %}
                 {% if filters.secondaryColor %}
                     {% set filterParams = filterParams|merge({'secondary_color': filters.secondaryColor}) %}
+                {% endif %}
+                {% if filters.alternatingWarpEnabled %}
+                    {% set filterParams = filterParams|merge({'alternating_warp_enabled': '1'}) %}
+                {% endif %}
+                {% if filters.alternatingWarpColor %}
+                    {% set filterParams = filterParams|merge({'alternating_warp_color': filters.alternatingWarpColor}) %}
+                {% endif %}
+                {% if filters.alternatingWarpSpan %}
+                    {% set filterParams = filterParams|merge({'alternating_warp_span': filters.alternatingWarpSpan}) %}
+                {% endif %}
+                {% if filters.alternatingWarpOffset %}
+                    {% set filterParams = filterParams|merge({'alternating_warp_offset': filters.alternatingWarpOffset}) %}
                 {% endif %}
 
                 <nav class="pagination">
@@ -593,10 +767,20 @@
                     }, index * 100);
                 }
             });
+
+            // Setup sticky filters section observer
+            setupStickyFiltersObserver();
+            
+            // Initialize alternating warp section state
+            toggleAlternatingWarpSection();
             
             // Add change handlers for all filter inputs
             const primaryColorInput = document.getElementById('primary_color');
             const secondaryColorInput = document.getElementById('secondary_color');
+            const alternatingWarpEnabledInput = document.getElementById('alternating_warp_enabled');
+            const alternatingWarpColorInput = document.getElementById('alternating_warp_color');
+            const alternatingWarpSpanInput = document.getElementById('alternating_warp_span');
+            const alternatingWarpOffsetInput = document.getElementById('alternating_warp_offset');
             const maxShaftsInput = document.getElementById('max_shafts');
             const maxTreadlesInput = document.getElementById('max_treadles');
             
@@ -607,6 +791,23 @@
             if (secondaryColorInput) {
                 secondaryColorInput.addEventListener('change', reloadAllPreviews);
                 secondaryColorInput.addEventListener('change', updatePaginationLinks);
+            }
+            if (alternatingWarpEnabledInput) {
+                alternatingWarpEnabledInput.addEventListener('change', toggleAlternatingWarpSection);
+                alternatingWarpEnabledInput.addEventListener('change', reloadAllPreviews);
+                alternatingWarpEnabledInput.addEventListener('change', updatePaginationLinks);
+            }
+            if (alternatingWarpColorInput) {
+                alternatingWarpColorInput.addEventListener('change', reloadAllPreviews);
+                alternatingWarpColorInput.addEventListener('change', updatePaginationLinks);
+            }
+            if (alternatingWarpSpanInput) {
+                alternatingWarpSpanInput.addEventListener('input', reloadAllPreviews);
+                alternatingWarpSpanInput.addEventListener('input', updatePaginationLinks);
+            }
+            if (alternatingWarpOffsetInput) {
+                alternatingWarpOffsetInput.addEventListener('input', reloadAllPreviews);
+                alternatingWarpOffsetInput.addEventListener('input', updatePaginationLinks);
             }
             if (maxShaftsInput) {
                 maxShaftsInput.addEventListener('input', updatePaginationLinks);
@@ -619,10 +820,53 @@
             updatePaginationLinks();
         });
 
+        function setupStickyFiltersObserver() {
+            const filtersSection = document.querySelector('.filters-section');
+            const browseHeader = document.querySelector('.browse-header');
+            
+            if (!filtersSection || !browseHeader) return;
+            
+            // Create an intersection observer to detect when the browse header goes out of view
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Browse header is visible, filters not stuck
+                        filtersSection.classList.remove('stuck');
+                    } else {
+                        // Browse header is not visible, filters are stuck
+                        filtersSection.classList.add('stuck');
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0
+            });
+            
+            observer.observe(browseHeader);
+        }
+
+        function toggleAlternatingWarpSection() {
+            const checkbox = document.getElementById('alternating_warp_enabled');
+            const section = document.getElementById('alternating_warp_section');
+            
+            if (checkbox && section) {
+                if (checkbox.checked) {
+                    section.classList.remove('disabled');
+                } else {
+                    section.classList.add('disabled');
+                }
+            }
+        }
+
         function updatePaginationLinks() {
             const paginationLinks = document.querySelectorAll('.pagination a');
             const primaryColor = document.getElementById('primary_color')?.value;
             const secondaryColor = document.getElementById('secondary_color')?.value;
+            const alternatingWarpEnabled = document.getElementById('alternating_warp_enabled')?.checked;
+            const alternatingWarpColor = document.getElementById('alternating_warp_color')?.value;
+            const alternatingWarpSpan = document.getElementById('alternating_warp_span')?.value;
+            const alternatingWarpOffset = document.getElementById('alternating_warp_offset')?.value;
             const maxShafts = document.getElementById('max_shafts')?.value;
             const maxTreadles = document.getElementById('max_treadles')?.value;
             
@@ -654,6 +898,33 @@
                     url.searchParams.delete('secondary_color');
                 }
                 
+                if (alternatingWarpEnabled) {
+                    url.searchParams.set('alternating_warp_enabled', '1');
+                    
+                    if (alternatingWarpColor && alternatingWarpColor !== '#ff0000') {
+                        url.searchParams.set('alternating_warp_color', alternatingWarpColor);
+                    } else {
+                        url.searchParams.delete('alternating_warp_color');
+                    }
+                    
+                    if (alternatingWarpSpan && alternatingWarpSpan !== '') {
+                        url.searchParams.set('alternating_warp_span', alternatingWarpSpan);
+                    } else {
+                        url.searchParams.delete('alternating_warp_span');
+                    }
+                    
+                    if (alternatingWarpOffset && alternatingWarpOffset !== '0' && alternatingWarpOffset !== '') {
+                        url.searchParams.set('alternating_warp_offset', alternatingWarpOffset);
+                    } else {
+                        url.searchParams.delete('alternating_warp_offset');
+                    }
+                } else {
+                    url.searchParams.delete('alternating_warp_enabled');
+                    url.searchParams.delete('alternating_warp_color');
+                    url.searchParams.delete('alternating_warp_span');
+                    url.searchParams.delete('alternating_warp_offset');
+                }
+                
                 link.href = url.toString();
             });
         }
@@ -680,8 +951,16 @@
                 // Get color overrides from form
                 const primaryColorInput = document.getElementById('primary_color');
                 const secondaryColorInput = document.getElementById('secondary_color');
+                const alternatingWarpEnabledInput = document.getElementById('alternating_warp_enabled');
+                const alternatingWarpColorInput = document.getElementById('alternating_warp_color');
+                const alternatingWarpSpanInput = document.getElementById('alternating_warp_span');
+                const alternatingWarpOffsetInput = document.getElementById('alternating_warp_offset');
                 const primaryColor = primaryColorInput?.value;
                 const secondaryColor = secondaryColorInput?.value;
+                const alternatingWarpEnabled = alternatingWarpEnabledInput?.checked;
+                const alternatingWarpColor = alternatingWarpColorInput?.value;
+                const alternatingWarpSpan = alternatingWarpSpanInput?.value;
+                const alternatingWarpOffset = alternatingWarpOffsetInput?.value;
                 
                 const requestBody = {};
                 if (primaryColor && primaryColor !== '#000000') {
@@ -689,6 +968,14 @@
                 }
                 if (secondaryColor && secondaryColor !== '#ffffff') {
                     requestBody.secondaryColor = secondaryColor;
+                }
+                if (alternatingWarpEnabled && alternatingWarpColor && alternatingWarpSpan) {
+                    requestBody.alternatingWarpEnabled = true;
+                    requestBody.alternatingWarpColor = alternatingWarpColor;
+                    requestBody.alternatingWarpSpan = alternatingWarpSpan;
+                    if (alternatingWarpOffset && alternatingWarpOffset !== '0') {
+                        requestBody.alternatingWarpOffset = alternatingWarpOffset;
+                    }
                 }
                 
                 const response = await fetch(`/pattern/${filename}/preview`, {

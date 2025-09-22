@@ -27,6 +27,10 @@ class HomeController extends AbstractController
         $maxTreadles = $request->query->get('max_treadles');
         $primaryColor = $request->query->get('primary_color');
         $secondaryColor = $request->query->get('secondary_color');
+        $alternatingWarpColor = $request->query->get('alternating_warp_color');
+        $alternatingWarpSpan = $request->query->get('alternating_warp_span');
+        $alternatingWarpOffset = $request->query->get('alternating_warp_offset');
+        $alternatingWarpEnabled = $request->query->get('alternating_warp_enabled');
         
         // Apply filters
         $filteredData = $catalogData;
@@ -67,7 +71,11 @@ class HomeController extends AbstractController
                 'maxShafts' => $maxShafts,
                 'maxTreadles' => $maxTreadles,
                 'primaryColor' => $primaryColor,
-                'secondaryColor' => $secondaryColor
+                'secondaryColor' => $secondaryColor,
+                'alternatingWarpColor' => $alternatingWarpColor,
+                'alternatingWarpSpan' => $alternatingWarpSpan,
+                'alternatingWarpOffset' => $alternatingWarpOffset,
+                'alternatingWarpEnabled' => $alternatingWarpEnabled
             ]
         ]);
     }
@@ -117,6 +125,10 @@ class HomeController extends AbstractController
             $requestData = json_decode($request->getContent(), true) ?? [];
             $primaryColor = $requestData['primaryColor'] ?? null;
             $secondaryColor = $requestData['secondaryColor'] ?? null;
+            $alternatingWarpColor = $requestData['alternatingWarpColor'] ?? null;
+            $alternatingWarpSpan = $requestData['alternatingWarpSpan'] ?? null;
+            $alternatingWarpOffset = $requestData['alternatingWarpOffset'] ?? null;
+            $alternatingWarpEnabled = $requestData['alternatingWarpEnabled'] ?? null;
             
             // Apply color overrides if provided
             $colors = $weavingData['colors'];
@@ -134,9 +146,26 @@ class HomeController extends AbstractController
                 }
             }
             
+            // Apply alternating warp pattern if provided and enabled
+            $pattern = $weavingData['pattern'];
+            if ($alternatingWarpEnabled && $alternatingWarpColor && $alternatingWarpSpan && preg_match('/^#[a-fA-F0-9]{6}$/', $alternatingWarpColor)) {
+                $alternatingRgb = $this->hexToRgb($alternatingWarpColor);
+                $span = (int) $alternatingWarpSpan;
+                $offset = (int) ($alternatingWarpOffset ?? 0);
+                
+                if ($alternatingRgb && $span > 0 && $pattern) {
+                    // Add the alternating color to the color palette
+                    $alternatingColorIndex = max(array_keys($colors['colors'])) + 1;
+                    $colors['colors'][$alternatingColorIndex] = $alternatingRgb;
+                    
+                    // Modify pattern to use alternating warp colors
+                    $pattern = $this->applyAlternatingWarp($pattern, $alternatingColorIndex, $span, $offset);
+                }
+            }
+            
             // Return only essential data for preview
             return $this->json([
-                'pattern' => $weavingData['pattern'],
+                'pattern' => $pattern,
                 'colors' => $colors,
                 'metadata' => [
                     'title' => $weavingData['metadata']['title']
@@ -160,6 +189,32 @@ class HomeController extends AbstractController
         }
         
         return null;
+    }
+
+    private function applyAlternatingWarp(array $pattern, int $alternatingColorIndex, int $span, int $offset = 0): array
+    {
+        $modifiedPattern = $pattern;
+        
+        foreach ($modifiedPattern as $pickIndex => &$row) {
+            foreach ($row as $threadIndex => &$cell) {
+                // Apply alternating pattern to warp threads (when warp is visible - isUp = true)
+                if ($cell['isUp']) {
+                    // Apply offset to thread position before calculating stripe group
+                    $adjustedThreadIndex = $threadIndex + $offset;
+                    
+                    // Calculate which stripe this thread belongs to (0-based thread index)
+                    $stripeGroup = intval($adjustedThreadIndex / $span);
+                    
+                    // Alternate between original warp color and alternating color
+                    if ($stripeGroup % 2 === 1) {
+                        $cell['warpColor'] = $alternatingColorIndex;
+                        $cell['displayColor'] = $alternatingColorIndex;
+                    }
+                }
+            }
+        }
+        
+        return $modifiedPattern;
     }
 
     #[Route('/wifviewer', name: 'app_wif_viewer')]
