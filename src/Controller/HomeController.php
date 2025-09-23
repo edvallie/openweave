@@ -23,6 +23,7 @@ class HomeController extends AbstractController
         }
         
         // Get filter parameters
+        $search = $request->query->get('search');
         $maxShafts = $request->query->get('max_shafts');
         $maxTreadles = $request->query->get('max_treadles');
         $primaryColor = $request->query->get('primary_color');
@@ -34,6 +35,14 @@ class HomeController extends AbstractController
         
         // Apply filters
         $filteredData = $catalogData;
+        
+        if ($search !== null && $search !== '') {
+            $search = trim($search);
+            $filteredData = array_filter($filteredData, function($pattern) use ($search) {
+                return stripos($pattern['title'], $search) !== false;
+            });
+        }
+        
         if ($maxShafts !== null && $maxShafts !== '') {
             $maxShafts = (int) $maxShafts;
             $filteredData = array_filter($filteredData, fn($pattern) => $pattern['shafts'] <= $maxShafts);
@@ -68,6 +77,7 @@ class HomeController extends AbstractController
             'totalPatternsUnfiltered' => $totalPatternsUnfiltered,
             'perPage' => $perPage,
             'filters' => [
+                'search' => $search,
                 'maxShafts' => $maxShafts,
                 'maxTreadles' => $maxTreadles,
                 'primaryColor' => $primaryColor,

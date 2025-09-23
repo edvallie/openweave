@@ -23,6 +23,10 @@ functions:
         handler: public/index.php
         runtime: php-82-fpm
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+        memorySize: 512 # in MB (increase from default 128MB)
+        environment:
+            # PHP Configuration for Lambda
+            PHP_INI_SCAN_DIR: /var/task
         events:
             - httpApi: '*'
 
@@ -31,6 +35,10 @@ functions:
         handler: bin/console
         runtime: php-82-console
         timeout: 120 # in seconds
+        memorySize: 1024 # in MB (more memory for console commands)
+        environment:
+            # PHP Configuration for Lambda
+            PHP_INI_SCAN_DIR: /var/task
 
 package:
     patterns:
