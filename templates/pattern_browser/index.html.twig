@@ -630,6 +630,17 @@
                 </div>
                 
                 <div class="filter-group">
+                    <label for="min_shafts">Min Shafts</label>
+                    <input type="number" 
+                           id="min_shafts" 
+                           name="min_shafts" 
+                           min="1" 
+                           max="32" 
+                           value="{{ filters.minShafts }}"
+                           placeholder="1">
+                </div>
+                
+                <div class="filter-group">
                     <label for="max_shafts">Max Shafts</label>
                     <input type="number" 
                            id="max_shafts" 
@@ -637,7 +648,18 @@
                            min="1" 
                            max="32" 
                            value="{{ filters.maxShafts }}"
-                           placeholder="Any">
+                           placeholder="32">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="min_treadles">Min Treadles</label>
+                    <input type="number" 
+                           id="min_treadles" 
+                           name="min_treadles" 
+                           min="1" 
+                           max="32" 
+                           value="{{ filters.minTreadles }}"
+                           placeholder="1">
                 </div>
                 
                 <div class="filter-group">
@@ -648,7 +670,7 @@
                            min="1" 
                            max="32" 
                            value="{{ filters.maxTreadles }}"
-                           placeholder="Any">
+                           placeholder="32">
                 </div>
             </div>
             
@@ -728,13 +750,13 @@
             
             <div class="filter-actions">
                 <button type="submit" class="btn-filter">Apply Filters</button>
-                {% if filters.search or filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
+                {% if filters.search or filters.minShafts or filters.maxShafts or filters.minTreadles or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
                     <a href="{{ path('app_home') }}" class="btn-clear">Clear All</a>
                 {% endif %}
             </div>
         </form>
 
-        {% if filters.search or filters.maxShafts or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
+        {% if filters.search or filters.minShafts or filters.maxShafts or filters.minTreadles or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
             <div class="active-filters">
                 <div class="filter-tags">
                     <span style="color: #6b7280; font-size: 0.875rem; font-weight: 500;">Active filters:</span>
@@ -744,13 +766,33 @@
                             <span class="remove-icon">×</span>
                         </div>
                     {% endif %}
-                    {% if filters.maxShafts %}
+                    {% if filters.minShafts and filters.maxShafts %}
+                        <div class="filter-tag" data-filter="shafts_range" title="Click to remove this filter">
+                            {{ filters.minShafts }}-{{ filters.maxShafts }} shafts
+                            <span class="remove-icon">×</span>
+                        </div>
+                    {% elseif filters.minShafts %}
+                        <div class="filter-tag" data-filter="min_shafts" title="Click to remove this filter">
+                            Min {{ filters.minShafts }} shafts
+                            <span class="remove-icon">×</span>
+                        </div>
+                    {% elseif filters.maxShafts %}
                         <div class="filter-tag" data-filter="max_shafts" title="Click to remove this filter">
                             Max {{ filters.maxShafts }} shafts
                             <span class="remove-icon">×</span>
                         </div>
                     {% endif %}
-                    {% if filters.maxTreadles %}
+                    {% if filters.minTreadles and filters.maxTreadles %}
+                        <div class="filter-tag" data-filter="treadles_range" title="Click to remove this filter">
+                            {{ filters.minTreadles }}-{{ filters.maxTreadles }} treadles
+                            <span class="remove-icon">×</span>
+                        </div>
+                    {% elseif filters.minTreadles %}
+                        <div class="filter-tag" data-filter="min_treadles" title="Click to remove this filter">
+                            Min {{ filters.minTreadles }} treadles
+                            <span class="remove-icon">×</span>
+                        </div>
+                    {% elseif filters.maxTreadles %}
                         <div class="filter-tag" data-filter="max_treadles" title="Click to remove this filter">
                             Max {{ filters.maxTreadles }} treadles
                             <span class="remove-icon">×</span>
@@ -827,8 +869,14 @@
                 {% if filters.search %}
                     {% set filterParams = filterParams|merge({'search': filters.search}) %}
                 {% endif %}
+                {% if filters.minShafts %}
+                    {% set filterParams = filterParams|merge({'min_shafts': filters.minShafts}) %}
+                {% endif %}
                 {% if filters.maxShafts %}
                     {% set filterParams = filterParams|merge({'max_shafts': filters.maxShafts}) %}
+                {% endif %}
+                {% if filters.minTreadles %}
+                    {% set filterParams = filterParams|merge({'min_treadles': filters.minTreadles}) %}
                 {% endif %}
                 {% if filters.maxTreadles %}
                     {% set filterParams = filterParams|merge({'max_treadles': filters.maxTreadles}) %}
@@ -943,7 +991,9 @@
             const alternatingWarpColorInput = document.getElementById('alternating_warp_color');
             const alternatingWarpSpanInput = document.getElementById('alternating_warp_span');
             const alternatingWarpOffsetInput = document.getElementById('alternating_warp_offset');
+            const minShaftsInput = document.getElementById('min_shafts');
             const maxShaftsInput = document.getElementById('max_shafts');
+            const minTreadlesInput = document.getElementById('min_treadles');
             const maxTreadlesInput = document.getElementById('max_treadles');
             
             if (searchInput) {
@@ -974,8 +1024,14 @@
                 alternatingWarpOffsetInput.addEventListener('input', reloadAllPreviews);
                 alternatingWarpOffsetInput.addEventListener('input', updatePaginationLinks);
             }
+            if (minShaftsInput) {
+                minShaftsInput.addEventListener('input', updatePaginationLinks);
+            }
             if (maxShaftsInput) {
                 maxShaftsInput.addEventListener('input', updatePaginationLinks);
+            }
+            if (minTreadlesInput) {
+                minTreadlesInput.addEventListener('input', updatePaginationLinks);
             }
             if (maxTreadlesInput) {
                 maxTreadlesInput.addEventListener('input', updatePaginationLinks);
@@ -1042,10 +1098,24 @@
                 case 'search':
                     currentUrl.searchParams.delete('search');
                     break;
+                case 'min_shafts':
+                    currentUrl.searchParams.delete('min_shafts');
+                    break;
                 case 'max_shafts':
                     currentUrl.searchParams.delete('max_shafts');
                     break;
+                case 'shafts_range':
+                    currentUrl.searchParams.delete('min_shafts');
+                    currentUrl.searchParams.delete('max_shafts');
+                    break;
+                case 'min_treadles':
+                    currentUrl.searchParams.delete('min_treadles');
+                    break;
                 case 'max_treadles':
+                    currentUrl.searchParams.delete('max_treadles');
+                    break;
+                case 'treadles_range':
+                    currentUrl.searchParams.delete('min_treadles');
                     currentUrl.searchParams.delete('max_treadles');
                     break;
                 case 'primary_color':
@@ -1078,7 +1148,9 @@
             const alternatingWarpColor = document.getElementById('alternating_warp_color')?.value;
             const alternatingWarpSpan = document.getElementById('alternating_warp_span')?.value;
             const alternatingWarpOffset = document.getElementById('alternating_warp_offset')?.value;
+            const minShafts = document.getElementById('min_shafts')?.value;
             const maxShafts = document.getElementById('max_shafts')?.value;
+            const minTreadles = document.getElementById('min_treadles')?.value;
             const maxTreadles = document.getElementById('max_treadles')?.value;
             
             paginationLinks.forEach(link => {
@@ -1091,10 +1163,22 @@
                     url.searchParams.delete('search');
                 }
                 
+                if (minShafts && minShafts !== '') {
+                    url.searchParams.set('min_shafts', minShafts);
+                } else {
+                    url.searchParams.delete('min_shafts');
+                }
+                
                 if (maxShafts && maxShafts !== '') {
                     url.searchParams.set('max_shafts', maxShafts);
                 } else {
                     url.searchParams.delete('max_shafts');
+                }
+                
+                if (minTreadles && minTreadles !== '') {
+                    url.searchParams.set('min_treadles', minTreadles);
+                } else {
+                    url.searchParams.delete('min_treadles');
                 }
                 
                 if (maxTreadles && maxTreadles !== '') {

@@ -24,7 +24,9 @@ class HomeController extends AbstractController
         
         // Get filter parameters
         $search = $request->query->get('search');
+        $minShafts = $request->query->get('min_shafts');
         $maxShafts = $request->query->get('max_shafts');
+        $minTreadles = $request->query->get('min_treadles');
         $maxTreadles = $request->query->get('max_treadles');
         $primaryColor = $request->query->get('primary_color');
         $secondaryColor = $request->query->get('secondary_color');
@@ -43,9 +45,19 @@ class HomeController extends AbstractController
             });
         }
         
+        if ($minShafts !== null && $minShafts !== '') {
+            $minShafts = (int) $minShafts;
+            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['shafts'] >= $minShafts);
+        }
+        
         if ($maxShafts !== null && $maxShafts !== '') {
             $maxShafts = (int) $maxShafts;
             $filteredData = array_filter($filteredData, fn($pattern) => $pattern['shafts'] <= $maxShafts);
+        }
+        
+        if ($minTreadles !== null && $minTreadles !== '') {
+            $minTreadles = (int) $minTreadles;
+            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['treadles'] >= $minTreadles);
         }
         
         if ($maxTreadles !== null && $maxTreadles !== '') {
@@ -78,7 +90,9 @@ class HomeController extends AbstractController
             'perPage' => $perPage,
             'filters' => [
                 'search' => $search,
+                'minShafts' => $minShafts,
                 'maxShafts' => $maxShafts,
+                'minTreadles' => $minTreadles,
                 'maxTreadles' => $maxTreadles,
                 'primaryColor' => $primaryColor,
                 'secondaryColor' => $secondaryColor,
