@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}{{ weavingData.metadata.title }} - Pattern - OpenWeave{% endblock %}
+{% block title %}{{ pattern.title }} - Pattern - OpenWeave{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -59,6 +59,7 @@
             padding: 24px;
             border-bottom: 1px solid #e5e7eb;
             background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+            position: relative;
         }
 
         .visualization-header h2 {
@@ -272,6 +273,44 @@
             color: #6b7280;
             padding: 2rem;
         }
+
+        /* Heart icon styles for pattern preview */
+        .pattern-favorite-icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .pattern-favorite-icon:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .pattern-favorite-icon.favorited {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .pattern-favorite-icon:not(.favorited) {
+            color: #9ca3af;
+        }
+
+        .pattern-favorite-icon:not(.favorited):hover {
+            color: #ef4444;
+        }
     </style>
 {% endblock %}
 
@@ -283,6 +322,11 @@
     <div class="weaving-visualization">
         {% if weavingData %}
             <div class="visualization-header">
+                <div class="pattern-favorite-icon" data-pattern-id="{{ pattern.id }}" title="Add to favorites">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </div>
                 <h2>{{ weavingData.metadata.title }}</h2>
                 {% if weavingData.metadata.author %}
                     <p class="author">by {{ weavingData.metadata.author }}</p>
@@ -472,6 +516,11 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup heart icon functionality
+            setupPatternFavoriteIcon();
+        });
+
         function showTab(tabName) {
             // Hide all tab contents
             const contents = document.querySelectorAll('.tab-content');
@@ -494,6 +543,67 @@
             if (patternGrid) {
                 patternGrid.style.transform = `scale(${value})`;
                 patternGrid.style.transformOrigin = 'top left';
+            }
+        }
+
+        function setupPatternFavoriteIcon() {
+            const favoriteIcon = document.querySelector('.pattern-favorite-icon');
+            if (!favoriteIcon) return;
+
+            const patternId = favoriteIcon.dataset.patternId;
+            
+            // Check initial favorite status
+            checkPatternFavoriteStatus(patternId, favoriteIcon);
+            
+            // Add click handler
+            favoriteIcon.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePatternFavorite(patternId, favoriteIcon);
+            });
+        }
+
+        async function checkPatternFavoriteStatus(patternId, favoriteIcon) {
+            try {
+                const response = await fetch(`/api/favorite/pattern/${patternId}/status`);
+                const data = await response.json();
+                
+                if (data.favorited) {
+                    favoriteIcon.classList.add('favorited');
+                    favoriteIcon.title = 'Remove from favorites';
+                } else {
+                    favoriteIcon.classList.remove('favorited');
+                    favoriteIcon.title = 'Add to favorites';
+                }
+            } catch (error) {
+                console.error('Error checking favorite status:', error);
+            }
+        }
+
+        async function togglePatternFavorite(patternId, favoriteIcon) {
+            try {
+                const response = await fetch(`/api/favorite/pattern/${patternId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.favorited) {
+                        favoriteIcon.classList.add('favorited');
+                        favoriteIcon.title = 'Remove from favorites';
+                    } else {
+                        favoriteIcon.classList.remove('favorited');
+                        favoriteIcon.title = 'Add to favorites';
+                    }
+                } else {
+                    console.error('Error toggling favorite:', data.error);
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
             }
         }
     </script>

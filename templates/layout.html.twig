@@ -75,12 +75,62 @@
         .btn-secondary-custom:hover {
             box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
         }
+
+        /* Registration form specific styling */
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .form-check-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-check-label {
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .invalid-feedback {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .is-invalid {
+            border-color: #dc2626;
+        }
+
+        .is-invalid:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="container">
-        <div class="page-header">
+        <div class="page-header d-none">
             <h1>🧵 OpenWeave</h1>
             <p>Upload and visualize WIF (Weaving Information File) patterns</p>
         </div>

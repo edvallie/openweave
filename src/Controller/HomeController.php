@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Service\WifParser;
+use App\Repository\PatternFavoriteRepository;
+use App\Repository\PatternRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,17 +13,8 @@ use Symfony\Component\Routing\Annotation\Route;
 class HomeController extends AbstractController
 {
     #[Route('/', name: 'app_home')]
-    public function index(Request $request): Response
+    public function index(Request $request, PatternRepository $patternRepository): Response
     {
-        // Load catalog data
-        $catalogPath = $this->getParameter('kernel.project_dir') . '/data/catalog.json';
-        $catalogData = [];
-        
-        if (file_exists($catalogPath)) {
-            $catalogContent = file_get_contents($catalogPath);
-            $catalogData = json_decode($catalogContent, true) ?? [];
-        }
-        
         // Get filter parameters
         $search = $request->query->get('search');
         $minShafts = $request->query->get('min_shafts');
@@ -35,54 +28,39 @@ class HomeController extends AbstractController
         $alternatingWarpOffset = $request->query->get('alternating_warp_offset');
         $alternatingWarpEnabled = $request->query->get('alternating_warp_enabled');
         
-        // Apply filters
-        $filteredData = $catalogData;
-        
+        // Build filters array
+        $filters = [];
         if ($search !== null && $search !== '') {
-            $search = trim($search);
-            $filteredData = array_filter($filteredData, function($pattern) use ($search) {
-                return stripos($pattern['title'], $search) !== false;
-            });
+            $filters['search'] = trim($search);
         }
-        
         if ($minShafts !== null && $minShafts !== '') {
-            $minShafts = (int) $minShafts;
-            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['shafts'] >= $minShafts);
+            $filters['minShafts'] = (int) $minShafts;
         }
-        
         if ($maxShafts !== null && $maxShafts !== '') {
-            $maxShafts = (int) $maxShafts;
-            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['shafts'] <= $maxShafts);
+            $filters['maxShafts'] = (int) $maxShafts;
         }
-        
         if ($minTreadles !== null && $minTreadles !== '') {
-            $minTreadles = (int) $minTreadles;
-            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['treadles'] >= $minTreadles);
+            $filters['minTreadles'] = (int) $minTreadles;
         }
-        
         if ($maxTreadles !== null && $maxTreadles !== '') {
-            $maxTreadles = (int) $maxTreadles;
-            $filteredData = array_filter($filteredData, fn($pattern) => $pattern['treadles'] <= $maxTreadles);
+            $filters['maxTreadles'] = (int) $maxTreadles;
         }
-        
-        // Reset array keys after filtering
-        $filteredData = array_values($filteredData);
         
         // Pagination logic
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = 52;
-        $totalPatterns = count($filteredData);
-        $totalPatternsUnfiltered = count($catalogData);
+        
+        // Get patterns from database with filters and pagination
+        $patterns = $patternRepository->findWithFilters($filters, $page, $perPage);
+        $totalPatterns = $patternRepository->countWithFilters($filters);
+        $totalPatternsUnfiltered = $patternRepository->countWithFilters([]);
         $totalPages = max(1, ceil($totalPatterns / $perPage));
         
         // Ensure page doesn't exceed available pages
         $page = min($page, $totalPages);
         
-        $offset = ($page - 1) * $perPage;
-        $paginatedPatterns = array_slice($filteredData, $offset, $perPage);
-        
         return $this->render('pattern_browser/index.html.twig', [
-            'patterns' => $paginatedPatterns,
+            'patterns' => $patterns,
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'totalPatterns' => $totalPatterns,
@@ -110,40 +88,160 @@ class HomeController extends AbstractController
         return $this->render('home/index.html.twig');
     }
 
-    #[Route('/pattern/{filename}', name: 'app_pattern_preview')]
-    public function patternPreview(string $filename, WifParser $wifParser): Response
+    #[Route('/favorites', name: 'app_favorites')]
+    public function favorites(Request $request, PatternFavoriteRepository $favoriteRepository, PatternRepository $patternRepository): Response
     {
-        $wifPath = $this->getParameter('kernel.project_dir') . '/data/wif/' . $filename . '.wif';
+        // Check if user is authenticated
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        // Get user's favorite patterns
+        $favorites = $favoriteRepository->findBy(['account' => $user], ['id' => 'DESC']);
         
-        if (!file_exists($wifPath)) {
-            throw $this->createNotFoundException('Pattern file not found.');
+        // Convert favorites to pattern data format for the template
+        $patterns = [];
+        foreach ($favorites as $favorite) {
+            $pattern = $favorite->getPattern();
+            if ($pattern) {
+                $patterns[] = $pattern;
+            }
+        }
+
+        // Get filter parameters (same as index method)
+        $search = $request->query->get('search');
+        $minShafts = $request->query->get('min_shafts');
+        $maxShafts = $request->query->get('max_shafts');
+        $minTreadles = $request->query->get('min_treadles');
+        $maxTreadles = $request->query->get('max_treadles');
+        $primaryColor = $request->query->get('primary_color');
+        $secondaryColor = $request->query->get('secondary_color');
+        $alternatingWarpColor = $request->query->get('alternating_warp_color');
+        $alternatingWarpSpan = $request->query->get('alternating_warp_span');
+        $alternatingWarpOffset = $request->query->get('alternating_warp_offset');
+        $alternatingWarpEnabled = $request->query->get('alternating_warp_enabled');
+        
+        // Build filters array
+        $filters = [];
+        if ($search !== null && $search !== '') {
+            $filters['search'] = trim($search);
+        }
+        if ($minShafts !== null && $minShafts !== '') {
+            $filters['minShafts'] = (int) $minShafts;
+        }
+        if ($maxShafts !== null && $maxShafts !== '') {
+            $filters['maxShafts'] = (int) $maxShafts;
+        }
+        if ($minTreadles !== null && $minTreadles !== '') {
+            $filters['minTreadles'] = (int) $minTreadles;
+        }
+        if ($maxTreadles !== null && $maxTreadles !== '') {
+            $filters['maxTreadles'] = (int) $maxTreadles;
+        }
+        
+        // Apply filters to favorites using array_filter for now
+        $filteredPatterns = $patterns;
+        
+        if ($search !== null && $search !== '') {
+            $search = trim($search);
+            $filteredPatterns = array_filter($filteredPatterns, function($pattern) use ($search) {
+                return stripos($pattern->getTitle(), $search) !== false;
+            });
+        }
+        
+        if ($minShafts !== null && $minShafts !== '') {
+            $minShafts = (int) $minShafts;
+            $filteredPatterns = array_filter($filteredPatterns, fn($pattern) => $pattern->getShafts() >= $minShafts);
+        }
+        
+        if ($maxShafts !== null && $maxShafts !== '') {
+            $maxShafts = (int) $maxShafts;
+            $filteredPatterns = array_filter($filteredPatterns, fn($pattern) => $pattern->getShafts() <= $maxShafts);
+        }
+        
+        if ($minTreadles !== null && $minTreadles !== '') {
+            $minTreadles = (int) $minTreadles;
+            $filteredPatterns = array_filter($filteredPatterns, fn($pattern) => $pattern->getTreadles() >= $minTreadles);
+        }
+        
+        if ($maxTreadles !== null && $maxTreadles !== '') {
+            $maxTreadles = (int) $maxTreadles;
+            $filteredPatterns = array_filter($filteredPatterns, fn($pattern) => $pattern->getTreadles() <= $maxTreadles);
+        }
+        
+        // Reset array keys after filtering
+        $filteredPatterns = array_values($filteredPatterns);
+        
+        // Pagination logic
+        $page = max(1, (int) $request->query->get('page', 1));
+        $perPage = 52;
+        $totalPatterns = count($filteredPatterns);
+        $totalPatternsUnfiltered = count($patterns);
+        $totalPages = max(1, ceil($totalPatterns / $perPage));
+        
+        // Ensure page doesn't exceed available pages
+        $page = min($page, $totalPages);
+        
+        $offset = ($page - 1) * $perPage;
+        $paginatedPatterns = array_slice($filteredPatterns, $offset, $perPage);
+        
+        return $this->render('pattern_browser/index.html.twig', [
+            'patterns' => $paginatedPatterns,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalPatterns' => $totalPatterns,
+            'totalPatternsUnfiltered' => $totalPatternsUnfiltered,
+            'perPage' => $perPage,
+            'filters' => [
+                'search' => $search,
+                'minShafts' => $minShafts,
+                'maxShafts' => $maxShafts,
+                'minTreadles' => $minTreadles,
+                'maxTreadles' => $maxTreadles,
+                'primaryColor' => $primaryColor,
+                'secondaryColor' => $secondaryColor,
+                'alternatingWarpColor' => $alternatingWarpColor,
+                'alternatingWarpSpan' => $alternatingWarpSpan,
+                'alternatingWarpOffset' => $alternatingWarpOffset,
+                'alternatingWarpEnabled' => $alternatingWarpEnabled
+            ],
+            'isFavoritesPage' => true
+        ]);
+    }
+
+    #[Route('/pattern/{id}', name: 'app_pattern_preview', requirements: ['id' => '\d+'])]
+    public function patternPreview(int $id, WifParser $wifParser, PatternRepository $patternRepository): Response
+    {
+        $pattern = $patternRepository->find($id);
+        
+        if (!$pattern) {
+            throw $this->createNotFoundException('Pattern not found.');
         }
         
         try {
-            $fileContent = file_get_contents($wifPath);
-            $weavingData = $wifParser->parse($fileContent);
+            $weavingData = $wifParser->parse($pattern->getWif());
             
             return $this->render('pattern_preview/index.html.twig', [
                 'weavingData' => $weavingData,
-                'filename' => $filename
+                'pattern' => $pattern
             ]);
         } catch (\Exception $e) {
             throw $this->createNotFoundException('Error loading pattern: ' . $e->getMessage());
         }
     }
 
-    #[Route('/pattern/{filename}/preview', name: 'app_pattern_preview_api', methods: ['POST'])]
-    public function patternPreviewApi(string $filename, Request $request, WifParser $wifParser): Response
+    #[Route('/pattern/{id}/preview', name: 'app_pattern_preview_api', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function patternPreviewApi(int $id, Request $request, WifParser $wifParser, PatternRepository $patternRepository): Response
     {
-        $wifPath = $this->getParameter('kernel.project_dir') . '/data/wif/' . $filename . '.wif';
+        $pattern = $patternRepository->find($id);
         
-        if (!file_exists($wifPath)) {
-            return $this->json(['error' => 'Pattern file not found'], 404);
+        if (!$pattern) {
+            return $this->json(['error' => 'Pattern not found'], 404);
         }
         
         try {
-            $fileContent = file_get_contents($wifPath);
-            $weavingData = $wifParser->parse($fileContent);
+            $weavingData = $wifParser->parse($pattern->getWif());
             
             // Get color overrides from request body
             $requestData = json_decode($request->getContent(), true) ?? [];

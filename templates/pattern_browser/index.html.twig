@@ -31,6 +31,7 @@
             padding: 1rem;
             background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
             border-bottom: 1px solid #e5e7eb;
+            position: relative;
         }
 
         .pattern-header h3 {
@@ -52,6 +53,41 @@
             margin-top: 0.5rem;
             font-size: 0.75rem;
             color: #6b7280;
+        }
+
+        /* Heart icon styles */
+        .heart-icon {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+        }
+
+        .heart-icon:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .heart-icon.favorited {
+            color: #ef4444;
+        }
+
+        .heart-icon:not(.favorited) {
+            color: #9ca3af;
+        }
+
+        .heart-icon:not(.favorited):hover {
+            color: #ef4444;
         }
 
         .pattern-preview {
@@ -223,6 +259,12 @@
             font-weight: 600;
         }
 
+        .filters-header .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
         .filters-form {
             display: flex;
             gap: 1rem;
@@ -270,6 +312,35 @@
             transition: border-color 0.2s ease;
         }
 
+        .range-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .range-group label {
+            text-align: center;
+        }
+
+        .range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .range-inputs input {
+            width: 60px;
+            text-align: center;
+        }
+
+        .range-separator {
+            color: #6b7280;
+            font-weight: 500;
+            font-size: 0.875rem;
+            user-select: none;
+        }
+
         .filter-group input[type="color"] {
             width: 60px;
             height: 32px;
@@ -305,11 +376,58 @@
             font-size: 0.8125rem;
         }
 
-        .color-group {
+        .color-section {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
             align-items: center;
+        }
+
+        .color-inputs-container {
+            display: flex;
+            gap: 0.75rem;
+            align-items: start;
+        }
+
+        .color-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .color-flip-group {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+
+        .btn-flip-colors {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.375rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 28px;
+        }
+
+        .btn-flip-colors:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-flip-colors:active {
+            transform: translateY(0);
         }
 
         /* Alternating warp specific color-group styles */
@@ -481,17 +599,10 @@
             opacity: 1;
         }
 
-        .filter-actions {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
         @media (max-width: 768px) {
-            .filter-actions {
-                justify-content: center;
-                width: 100%;
+            .filters-header .filter-actions {
+                flex-direction: column;
+                gap: 0.5rem;
             }
         }
 
@@ -592,9 +703,16 @@
 {% endblock %}
 
 {% block page_contents %}
+    {% if isFavoritesPage is defined and isFavoritesPage %}
+        <div class="mb-3">
+            <a href="{{ path('app_home') }}" class="btn btn-outline-primary btn-sm">
+                ← Back to Pattern Library
+            </a>
+        </div>
+    {% endif %}
     <div class="browse-header">
         <div class="browse-title">
-            <h2>🎨 Pattern Library</h2>
+            <h2>{% if isFavoritesPage is defined and isFavoritesPage %}❤️ My Favorites{% else %}🎨 Pattern Library{% endif %}</h2>
         </div>
         <div class="browse-stats">
             <div class="stat-item">
@@ -615,9 +733,15 @@
     <div class="filters-section">
         <div class="filters-header">
             <h3>🔍 Filter Patterns</h3>
+            <div class="filter-actions">
+                <button type="submit" form="filters-form" class="btn-filter">Apply Filters</button>
+                {% if filters.search or filters.minShafts or filters.maxShafts or filters.minTreadles or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
+                    <a href="{% if isFavoritesPage is defined and isFavoritesPage %}{{ path('app_favorites') }}{% else %}{{ path('app_home') }}{% endif %}" class="btn-clear">Clear All</a>
+                {% endif %}
+            </div>
         </div>
         
-        <form method="GET" class="filters-form">
+        <form method="GET" class="filters-form" id="filters-form">
             <div class="filter-group-section">
                 <div class="filter-group" style="flex: 1; min-width: 200px;">
                     <label for="search">Search Pattern Name</label>
@@ -629,70 +753,85 @@
                            style="width: 100%; max-width: 300px;">
                 </div>
                 
-                <div class="filter-group">
-                    <label for="min_shafts">Min Shafts</label>
-                    <input type="number" 
-                           id="min_shafts" 
-                           name="min_shafts" 
-                           min="1" 
-                           max="32" 
-                           value="{{ filters.minShafts }}"
-                           placeholder="1">
+                <div class="filter-group range-group">
+                    <label for="min_shafts">Shafts</label>
+                    <div class="range-inputs">
+                        <input type="number" 
+                               id="min_shafts" 
+                               name="min_shafts" 
+                               min="1" 
+                               max="32" 
+                               value="{{ filters.minShafts }}"
+                               placeholder="Min"
+                               title="Minimum shafts">
+                        <span class="range-separator">-</span>
+                        <input type="number" 
+                               id="max_shafts" 
+                               name="max_shafts" 
+                               min="1" 
+                               max="32" 
+                               value="{{ filters.maxShafts }}"
+                               placeholder="Max"
+                               title="Maximum shafts">
+                    </div>
                 </div>
                 
-                <div class="filter-group">
-                    <label for="max_shafts">Max Shafts</label>
-                    <input type="number" 
-                           id="max_shafts" 
-                           name="max_shafts" 
-                           min="1" 
-                           max="32" 
-                           value="{{ filters.maxShafts }}"
-                           placeholder="32">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="min_treadles">Min Treadles</label>
-                    <input type="number" 
-                           id="min_treadles" 
-                           name="min_treadles" 
-                           min="1" 
-                           max="32" 
-                           value="{{ filters.minTreadles }}"
-                           placeholder="1">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="max_treadles">Max Treadles</label>
-                    <input type="number" 
-                           id="max_treadles" 
-                           name="max_treadles" 
-                           min="1" 
-                           max="32" 
-                           value="{{ filters.maxTreadles }}"
-                           placeholder="32">
+                <div class="filter-group range-group">
+                    <label for="min_treadles">Treadles</label>
+                    <div class="range-inputs">
+                        <input type="number" 
+                               id="min_treadles" 
+                               name="min_treadles" 
+                               min="1" 
+                               max="32" 
+                               value="{{ filters.minTreadles }}"
+                               placeholder="Min"
+                               title="Minimum treadles">
+                        <span class="range-separator">-</span>
+                        <input type="number" 
+                               id="max_treadles" 
+                               name="max_treadles" 
+                               min="1" 
+                               max="32" 
+                               value="{{ filters.maxTreadles }}"
+                               placeholder="Max"
+                               title="Maximum treadles">
+                    </div>
                 </div>
             </div>
             
-            <div class="filter-group-section">
-                <div class="filter-group color-group">
-                    <label for="primary_color">Primary Color</label>
-                    <input type="color" 
-                           id="primary_color" 
-                           name="primary_color" 
-                           value="{{ filters.primaryColor ?: '#000000' }}"
-                           title="Override primary color">
-                    <small style="font-size: 0.75rem; color: #6b7280;">Color 1</small>
+            <div class="filter-group-section color-section">
+                <div class="color-flip-group">
+                    <button type="button" 
+                            id="flip_colors" 
+                            class="btn-flip-colors"
+                            title="Swap primary and secondary colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/>
+                        </svg>
+                    </button>
                 </div>
                 
-                <div class="filter-group color-group">
-                    <label for="secondary_color">Secondary Color</label>
-                    <input type="color" 
-                           id="secondary_color" 
-                           name="secondary_color" 
-                           value="{{ filters.secondaryColor ?: '#ffffff' }}"
-                           title="Override secondary color">
-                    <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
+                <div class="color-inputs-container">
+                    <div class="filter-group color-group">
+                        <label for="primary_color">Primary Color</label>
+                        <input type="color" 
+                               id="primary_color" 
+                               name="primary_color" 
+                               value="{{ filters.primaryColor ?: '#000000' }}"
+                               title="Override primary color">
+                        <small style="font-size: 0.75rem; color: #6b7280;">Color 1</small>
+                    </div>
+                    
+                    <div class="filter-group color-group">
+                        <label for="secondary_color">Secondary Color</label>
+                        <input type="color" 
+                               id="secondary_color" 
+                               name="secondary_color" 
+                               value="{{ filters.secondaryColor ?: '#ffffff' }}"
+                               title="Override secondary color">
+                        <small style="font-size: 0.75rem; color: #6b7280;">Color 2</small>
+                    </div>
                 </div>
             </div>
             
@@ -746,13 +885,6 @@
                                title="Thread offset for stripe pattern">
                     </div>
                 </div>
-            </div>
-            
-            <div class="filter-actions">
-                <button type="submit" class="btn-filter">Apply Filters</button>
-                {% if filters.search or filters.minShafts or filters.maxShafts or filters.minTreadles or filters.maxTreadles or filters.primaryColor or filters.secondaryColor or filters.alternatingWarpEnabled %}
-                    <a href="{{ path('app_home') }}" class="btn-clear">Clear All</a>
-                {% endif %}
             </div>
         </form>
 
@@ -830,21 +962,25 @@
                 <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5;">🔍</div>
                 {% if filters.maxShafts or filters.maxTreadles %}
                     <h3>No Patterns Match Your Filters</h3>
-                    <p class="text-muted">Try adjusting your filter criteria or <a href="{{ path('app_home') }}">view all patterns</a>.</p>
+                    <p class="text-muted">Try adjusting your filter criteria{% if isFavoritesPage is not defined or not isFavoritesPage %} or <a href="{{ path('app_home') }}">view all patterns</a>{% endif %}.</p>
                 {% else %}
-                    <h3>No Patterns Found</h3>
-                    <p class="text-muted">The pattern library appears to be empty.</p>
+                    <h3>{% if isFavoritesPage is defined and isFavoritesPage %}No Favorite Patterns{% else %}No Patterns Found{% endif %}</h3>
+                    <p class="text-muted">{% if isFavoritesPage is defined and isFavoritesPage %}You haven't favorited any patterns yet. <a href="{{ path('app_home') }}">Browse patterns</a> to add some to your favorites!{% else %}The pattern library appears to be empty.{% endif %}</p>
                 {% endif %}
             </div>
         </div>
     {% else %}
         <div class="patterns-grid" id="patterns-grid">
             {% for pattern in patterns %}
-                <div class="pattern-card" data-pattern-id="{{ loop.index0 + ((currentPage - 1) * perPage) }}" data-filepath="{{ pattern.filepath }}">
+                <div class="pattern-card" data-pattern-id="{{ pattern.id }}">
                     <div class="pattern-header">
+                        <div class="heart-icon" data-pattern-id="{{ pattern.id }}" title="Add to favorites">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </div>
                         <h3>{{ pattern.title }}</h3>
                         <div class="pattern-meta">
-                            <span>{{ pattern.source }}</span>
                             <span>{{ pattern.shafts }}×{{ pattern.treadles }}</span>
                         </div>
                     </div>
@@ -901,9 +1037,10 @@
                 {% endif %}
 
                 <nav class="pagination">
+                    {% set baseRoute = isFavoritesPage is defined and isFavoritesPage ? 'app_favorites' : 'app_home' %}
                     {% if currentPage > 1 %}
-                        <a href="{{ path('app_home', filterParams|merge({'page': 1})) }}" title="First page">⏪</a>
-                        <a href="{{ path('app_home', filterParams|merge({'page': currentPage - 1})) }}" title="Previous page">⬅️</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': 1})) }}" title="First page">⏪</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': currentPage - 1})) }}" title="Previous page">⬅️</a>
                     {% else %}
                         <span class="disabled" title="First page">⏪</span>
                         <span class="disabled" title="Previous page">⬅️</span>
@@ -913,7 +1050,7 @@
                     {% set end_page = min(totalPages, currentPage + 2) %}
                     
                     {% if start_page > 1 %}
-                        <a href="{{ path('app_home', filterParams|merge({'page': 1})) }}">1</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': 1})) }}">1</a>
                         {% if start_page > 2 %}
                             <span>…</span>
                         {% endif %}
@@ -923,7 +1060,7 @@
                         {% if page == currentPage %}
                             <span class="current">{{ page }}</span>
                         {% else %}
-                            <a href="{{ path('app_home', filterParams|merge({'page': page})) }}">{{ page }}</a>
+                            <a href="{{ path(baseRoute, filterParams|merge({'page': page})) }}">{{ page }}</a>
                         {% endif %}
                     {% endfor %}
 
@@ -931,12 +1068,12 @@
                         {% if end_page < totalPages - 1 %}
                             <span>…</span>
                         {% endif %}
-                        <a href="{{ path('app_home', filterParams|merge({'page': totalPages})) }}">{{ totalPages }}</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': totalPages})) }}">{{ totalPages }}</a>
                     {% endif %}
 
                     {% if currentPage < totalPages %}
-                        <a href="{{ path('app_home', filterParams|merge({'page': currentPage + 1})) }}" title="Next page">➡️</a>
-                        <a href="{{ path('app_home', filterParams|merge({'page': totalPages})) }}" title="Last page">⏩</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': currentPage + 1})) }}" title="Next page">➡️</a>
+                        <a href="{{ path(baseRoute, filterParams|merge({'page': totalPages})) }}" title="Last page">⏩</a>
                     {% else %}
                         <span class="disabled" title="Next page">➡️</span>
                         <span class="disabled" title="Last page">⏩</span>
@@ -954,25 +1091,24 @@
             const patternCards = document.querySelectorAll('.pattern-card');
             
             patternCards.forEach((card, index) => {
-                const filepath = card.dataset.filepath;
-                if (filepath) {
-                    // Extract filename from filepath
-                    const filename = filepath.split('/').pop().replace('.wif', '');
-                    
-                    // Add click handler for navigation
-                    card.addEventListener('click', function() {
-                        window.location.href = `/pattern/${filename}`;
+                const patternId = card.dataset.patternId;
+                if (patternId) {
+                    // Add click handler for navigation (but not on heart icon)
+                    card.addEventListener('click', function(e) {
+                        if (!e.target.closest('.heart-icon')) {
+                            window.location.href = `/pattern/${patternId}`;
+                        }
                     });
-                    
-                    // Store filename for reloading
-                    card.dataset.filename = filename;
                     
                     // Load pattern preview after a delay to stagger requests
                     setTimeout(() => {
-                        loadPatternPreview(card, filename);
+                        loadPatternPreview(card, patternId);
                     }, index * 100);
                 }
             });
+
+            // Setup heart icon click handlers
+            setupHeartIconHandlers();
 
             // Setup sticky filters section observer
             setupStickyFiltersObserver();
@@ -995,6 +1131,7 @@
             const maxShaftsInput = document.getElementById('max_shafts');
             const minTreadlesInput = document.getElementById('min_treadles');
             const maxTreadlesInput = document.getElementById('max_treadles');
+            const flipColorsButton = document.getElementById('flip_colors');
             
             if (searchInput) {
                 searchInput.addEventListener('input', updatePaginationLinks);
@@ -1036,10 +1173,32 @@
             if (maxTreadlesInput) {
                 maxTreadlesInput.addEventListener('input', updatePaginationLinks);
             }
+            if (flipColorsButton) {
+                flipColorsButton.addEventListener('click', flipColors);
+            }
             
             // Update pagination links on page load to include current form state
             updatePaginationLinks();
         });
+
+        function flipColors() {
+            const primaryColorInput = document.getElementById('primary_color');
+            const secondaryColorInput = document.getElementById('secondary_color');
+            
+            if (primaryColorInput && secondaryColorInput) {
+                // Store current values
+                const primaryColor = primaryColorInput.value;
+                const secondaryColor = secondaryColorInput.value;
+                
+                // Swap the values
+                primaryColorInput.value = secondaryColor;
+                secondaryColorInput.value = primaryColor;
+                
+                // Trigger change events to update previews and pagination
+                primaryColorInput.dispatchEvent(new Event('change'));
+                secondaryColorInput.dispatchEvent(new Event('change'));
+            }
+        }
 
         function setupStickyFiltersObserver() {
             const filtersSection = document.querySelector('.filters-section');
@@ -1233,21 +1392,21 @@
         function reloadAllPreviews() {
             const patternCards = document.querySelectorAll('.pattern-card');
             patternCards.forEach((card, index) => {
-                const filename = card.dataset.filename;
-                if (filename) {
+                const patternId = card.dataset.patternId;
+                if (patternId) {
                     // Show loading state
                     const previewDiv = card.querySelector('.pattern-preview');
                     previewDiv.innerHTML = '<div class="pattern-loading"><div class="spinner"></div><span>Updating...</span></div>';
                     
                     // Reload with delay to avoid overwhelming the server
                     setTimeout(() => {
-                        loadPatternPreview(card, filename);
+                        loadPatternPreview(card, patternId);
                     }, index * 50);
                 }
             });
         }
 
-        async function loadPatternPreview(card, filename) {
+        async function loadPatternPreview(card, patternId) {
             try {
                 // Get color overrides from form
                 const primaryColorInput = document.getElementById('primary_color');
@@ -1279,7 +1438,7 @@
                     }
                 }
                 
-                const response = await fetch(`/pattern/${filename}/preview`, {
+                const response = await fetch(`/pattern/${patternId}/preview`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1391,6 +1550,68 @@
                     <div>${message}</div>
                 </div>
             `;
+        }
+
+        function setupHeartIconHandlers() {
+            const heartIcons = document.querySelectorAll('.heart-icon');
+            
+            heartIcons.forEach(heartIcon => {
+                const patternId = heartIcon.dataset.patternId;
+                
+                // Check initial favorite status
+                checkFavoriteStatus(patternId, heartIcon);
+                
+                // Add click handler
+                heartIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFavorite(patternId, heartIcon);
+                });
+            });
+        }
+
+        async function checkFavoriteStatus(patternId, heartIcon) {
+            try {
+                const response = await fetch(`/api/favorite/pattern/${patternId}/status`);
+                const data = await response.json();
+                
+                if (data.favorited) {
+                    heartIcon.classList.add('favorited');
+                    heartIcon.title = 'Remove from favorites';
+                } else {
+                    heartIcon.classList.remove('favorited');
+                    heartIcon.title = 'Add to favorites';
+                }
+            } catch (error) {
+                console.error('Error checking favorite status:', error);
+            }
+        }
+
+        async function toggleFavorite(patternId, heartIcon) {
+            try {
+                const response = await fetch(`/api/favorite/pattern/${patternId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.favorited) {
+                        heartIcon.classList.add('favorited');
+                        heartIcon.title = 'Remove from favorites';
+                    } else {
+                        heartIcon.classList.remove('favorited');
+                        heartIcon.title = 'Add to favorites';
+                    }
+                } else {
+                    console.error('Error toggling favorite:', data.error);
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+            }
         }
     </script>
 {% endblock %}

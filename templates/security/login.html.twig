@@ -1,0 +1,66 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Login - OpenWeave{% endblock %}
+
+{% block page_contents %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center mb-0">Welcome Back</h2>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    {% endif %}
+
+                    {% if app.user %}
+                        <div class="alert alert-info text-center">
+                            You are already logged in as <strong>{{ app.user.firstname ?? app.user.username }}</strong>
+                            <br>
+                            <a href="{{ path('app_logout') }}" class="btn btn-outline-primary btn-sm mt-2">Logout</a>
+                        </div>
+                    {% else %}
+                        <form method="post" novalidate>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" 
+                                       value="{{ last_username }}" 
+                                       name="_username" 
+                                       id="username" 
+                                       class="form-control" 
+                                       autocomplete="username" 
+                                       required 
+                                       autofocus
+                                       placeholder="Enter your username">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" 
+                                       name="_password" 
+                                       id="password" 
+                                       class="form-control" 
+                                       autocomplete="current-password" 
+                                       required
+                                       placeholder="Enter your password">
+                            </div>
+
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                            <div class="d-grid">
+                                <button class="btn btn-custom btn-lg text-white" type="submit">
+                                    Sign In
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <p class="mb-0">Don't have an account? <a href="{{ path('app_register') }}" class="text-decoration-none">Create one here</a></p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

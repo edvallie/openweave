@@ -1,0 +1,54 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Register - OpenWeave{% endblock %}
+
+{% block page_contents %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center mb-0">Create Account</h2>
+                </div>
+                <div class="card-body">
+                    {{ form_errors(registrationForm) }}
+
+                    {{ form_start(registrationForm, {'attr': {'novalidate': 'novalidate'}}) }}
+                        <div class="mb-3">
+                            {{ form_label(registrationForm.firstname, null, {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(registrationForm.firstname) }}
+                            {{ form_errors(registrationForm.firstname) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_label(registrationForm.email, null, {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(registrationForm.email) }}
+                            {{ form_errors(registrationForm.email) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_label(registrationForm.username, null, {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(registrationForm.username) }}
+                            {{ form_errors(registrationForm.username) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_label(registrationForm.plainPassword, null, {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(registrationForm.plainPassword) }}
+                            {{ form_errors(registrationForm.plainPassword) }}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-custom btn-lg text-white">
+                                Create Account
+                            </button>
+                        </div>
+                    {{ form_end(registrationForm) }}
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Already have an account? <a href="#" class="text-decoration-none">Sign in here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
