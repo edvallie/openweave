@@ -40,7 +40,15 @@ class LibraryCatalogCommand extends Command
             'limit',
             'l',
             InputOption::VALUE_REQUIRED,
-            'Limit the number of files to process (useful for testing)',
+            'Limit the number of files to process',
+            null
+        );
+
+        $this->addOption(
+            'offset',
+            'o',
+            InputOption::VALUE_REQUIRED,
+            'Offset the number of file to process',
             null
         );
     }
@@ -52,7 +60,7 @@ class LibraryCatalogCommand extends Command
         $limit = $input->getOption('limit');
         
         // Increase memory limit for large datasets
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2G');
         
         if ($useDatabase) {
             $io->title('Library Database Populator');
@@ -146,7 +154,7 @@ class LibraryCatalogCommand extends Command
             $progressBar->advance();
 
             // Give a brief status update every 1000 files
-            if ($processed % 1000 === 0) {
+            if ($processed % 100 === 0) {
                 $progressBar->clear();
                 if ($useDatabase) {
                     $io->comment("Processed: {$processed} files, Created: {$created}, Updated: {$updated}, Errors: {$errors}");
@@ -157,7 +165,7 @@ class LibraryCatalogCommand extends Command
             }
 
             // Free memory periodically and flush database
-            if ($processed % 1000 === 0) {
+            if ($processed % 100 === 0) {
                 if ($useDatabase) {
                     $this->entityManager->flush();
                     $this->entityManager->clear();
